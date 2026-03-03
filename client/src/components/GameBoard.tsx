@@ -122,7 +122,7 @@ export default function GameBoard({ state, onError }: Props) {
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-700/50 text-xs flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-slate-400">Hand <span className="text-white font-bold">{handNumber}</span></span>
+          <span className="text-slate-400">Hand <span className="text-white font-bold">{handNumber}</span> / {state.targetScore}</span>
           {trumpSuit && (
             <span className="bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 px-2 py-0.5 rounded-full font-semibold">
               Trump: {TRUMP_LABEL[trumpSuit]}

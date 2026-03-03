@@ -19,7 +19,7 @@ export default function GameOver({ state }: Props) {
         <h2 className="text-3xl font-black text-white mb-1">
           {iAmWinner ? 'You Win!' : `${winner?.name} Wins!`}
         </h2>
-        <p className="text-slate-400 text-sm mb-6">Game finished · Final Scores</p>
+        <p className="text-slate-400 text-sm mb-6">After {state.targetScore} hands · Final Scores</p>
 
         <div className="space-y-2 mb-6">
           {sorted.map((p, i) => {

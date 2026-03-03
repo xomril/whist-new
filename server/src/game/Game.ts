@@ -52,7 +52,7 @@ export class WhistGame {
   trickLeaderIndex = 0;
   isOverGame?: boolean;
 
-  constructor(id: string, maxPlayers: 3 | 4, targetScore = 100) {
+  constructor(id: string, maxPlayers: 3 | 4, targetScore = 13) {
     this.id = id;
     this.maxPlayers = maxPlayers;
     this.targetScore = targetScore;
@@ -317,8 +317,7 @@ export class WhistGame {
     for (const p of this.players) {
       p.score += calcScore(p.bid2 ?? 0, p.tricksTaken, this.isOverGame ?? false);
     }
-    const maxScore = Math.max(...this.players.map(p => p.score));
-    this.phase = maxScore >= this.targetScore ? 'gameOver' : 'handEnd';
+    this.phase = this.handNumber >= this.targetScore ? 'gameOver' : 'handEnd';
     if (this.phase === 'handEnd') {
       this.dealerIndex = (this.dealerIndex + 1) % this.maxPlayers;
     }
