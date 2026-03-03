@@ -87,7 +87,7 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
                     <div className="h-1 rounded-full bg-slate-700 w-16 mt-1">
                       <div
                         className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                        style={{ width: `${Math.min(100, Math.max(0, (p.score / targetScore) * 100))}%` }}
+                        style={{ width: `${(handNumber / targetScore) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -98,7 +98,7 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
         </tbody>
       </table>
       <div className="px-3 py-1.5 text-right text-xs text-slate-500 border-t border-slate-800">
-        Target: {targetScore} pts
+        Round {handNumber} of {targetScore}
       </div>
     </div>
   );

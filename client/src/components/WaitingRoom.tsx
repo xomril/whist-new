@@ -118,7 +118,7 @@ export default function WaitingRoom({ room, onError }: Props) {
             {room.players.length < room.maxPlayers ? ' — waiting…' : ' — starting soon!'}
           </div>
           <p className="mt-2 text-slate-500">
-            Target score: <span className="text-emerald-400">{room.targetScore}</span> pts
+            Rounds: <span className="text-emerald-400">{room.targetScore}</span>
           </p>
         </div>
       </div>

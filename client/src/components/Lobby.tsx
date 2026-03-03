@@ -13,7 +13,7 @@ export default function Lobby({ onCreated, onJoined, onSpectate, onError }: Prop
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [maxPlayers, setMaxPlayers] = useState<3 | 4>(4);
-  const [targetScore, setTargetScore] = useState(100);
+  const [targetScore, setTargetScore] = useState(13);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = () => {
@@ -116,23 +116,23 @@ export default function Lobby({ onCreated, onJoined, onSpectate, onError }: Prop
                 </div>
               </div>
 
-              {/* Target Score */}
+              {/* Rounds */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1.5">
-                  Target Score: <span className="text-emerald-400 font-bold">{targetScore}</span>
+                  Rounds: <span className="text-emerald-400 font-bold">{targetScore}</span>
                 </label>
                 <input
                   type="range"
-                  min={50}
-                  max={300}
-                  step={25}
+                  min={5}
+                  max={20}
+                  step={1}
                   value={targetScore}
                   onChange={e => setTargetScore(Number(e.target.value))}
                   className="w-full accent-emerald-500"
                 />
                 <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>50 (short)</span>
-                  <span>300 (long)</span>
+                  <span>5 (short)</span>
+                  <span>20 (long)</span>
                 </div>
               </div>
 

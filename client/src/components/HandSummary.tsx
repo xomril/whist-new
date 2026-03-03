@@ -83,7 +83,7 @@ export default function HandSummary({ state, onError }: Props) {
                   <div className="h-1.5 w-20 bg-slate-700 rounded-full">
                     <div
                       className="h-full rounded-full bg-emerald-500"
-                      style={{ width: `${Math.min(100, Math.max(0, (p.score / targetScore) * 100))}%` }}
+                      style={{ width: `${(state.handNumber / targetScore) * 100}%` }}
                     />
                   </div>
                   <span className={`font-bold w-10 text-right ${p.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -92,7 +92,7 @@ export default function HandSummary({ state, onError }: Props) {
                 </div>
               </div>
             ))}
-          <p className="text-xs text-slate-500 mt-2 text-right">Goal: {targetScore} pts</p>
+          <p className="text-xs text-slate-500 mt-2 text-right">Round {state.handNumber} of {targetScore}</p>
         </div>
 
         {!state.isSpectator && (
