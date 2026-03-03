@@ -1,0 +1,193 @@
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { RoomManager } from './RoomManager';
+import { ServerToClientEvents, ClientToServerEvents } from './types';
+import { chooseBid1, chooseBid2, chooseCard } from './game/BotPlayer';
+
+const app = express();
+const httpServer = createServer(app);
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+  },
+});
+
+const rooms = new RoomManager();
+
+// Serve built client in production
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  app.get('*', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
+
+// ── Helper: push updated game state to every player + spectator in a room ────
+function broadcastState(roomId: string) {
+  const game = rooms.getGame(roomId);
+  if (!game) return;
+  const info = rooms.getRoomInfo(roomId);
+  // Skip bots when broadcasting — they have no socket
+  for (const { id } of info?.players ?? []) {
+    if (!rooms.isBot(roomId, id)) {
+      io.to(id).emit('gameState', game.stateFor(id));
+    }
+  }
+  for (const sid of rooms.getSpectatorIds(roomId)) {
+    io.to(sid).emit('gameState', game.stateForSpectator());
+  }
+}
+
+// ── Bot turn scheduling ───────────────────────────────────────────────────────
+function scheduleBotTurn(roomId: string) {
+  const game = rooms.getGame(roomId);
+  if (!game) return;
+  if (game.phase === 'gameOver' || game.phase === 'waiting' || game.phase === 'handEnd') return;
+
+  const currentId = game.players[game.currentPlayerIndex]?.id;
+  if (!currentId || !rooms.isBot(roomId, currentId)) return;
+
+  const delay = 700 + Math.random() * 500;
+  setTimeout(() => {
+    const g = rooms.getGame(roomId);
+    if (!g) return;
+    // Confirm it's still this bot's turn (state may have changed)
+    if (g.players[g.currentPlayerIndex]?.id !== currentId) return;
+
+    let result: { success: boolean; error?: string } = { success: false };
+
+    if (g.phase === 'bid1') {
+      result = g.placeBid1(currentId, chooseBid1(g, currentId));
+    } else if (g.phase === 'bid2') {
+      result = g.placeBid2(currentId, chooseBid2(g, currentId));
+    } else if (g.phase === 'playing') {
+      result = g.playCard(currentId, chooseCard(g, currentId));
+    }
+
+    if (result.success) {
+      broadcastState(roomId);
+      // Chain next bot turn if needed
+      scheduleBotTurn(roomId);
+    }
+  }, delay);
+}
+
+// ── Socket handlers ──────────────────────────────────────────────────────────
+io.on('connection', socket => {
+  socket.join(socket.id);
+
+  // ── Create room ─────────────────────────────────────────────────────────────
+  socket.on('createRoom', ({ playerName, maxPlayers, targetScore }, cb) => {
+    try {
+      const roomId = rooms.createRoom(socket.id, playerName, maxPlayers, targetScore ?? 100);
+      socket.join(roomId);
+      cb({ success: true, roomId });
+      io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
+    } catch (e) {
+      cb({ success: false, error: String(e) });
+    }
+  });
+
+  // ── Join room ────────────────────────────────────────────────────────────────
+  socket.on('joinRoom', ({ roomId: raw, playerName }, cb) => {
+    const result = rooms.joinRoom(raw, socket.id, playerName);
+    if (!result.success) { cb(result); return; }
+
+    const roomId = result.roomId!;
+    socket.join(roomId);
+    cb({ success: true });
+    io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
+
+    if (rooms.isFull(roomId)) {
+      rooms.startGame(roomId);
+      broadcastState(roomId);
+      scheduleBotTurn(roomId);
+    }
+  });
+
+  // ── Add bots ─────────────────────────────────────────────────────────────────
+  socket.on('addBots', ({ roomId }, cb) => {
+    const result = rooms.addBots(roomId, socket.id);
+    if (!result.success) { cb(result); return; }
+
+    cb({ success: true });
+    io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
+
+    if (rooms.isFull(roomId)) {
+      rooms.startGame(roomId);
+      broadcastState(roomId);
+      scheduleBotTurn(roomId);
+    }
+  });
+
+  // ── Spectate ─────────────────────────────────────────────────────────────────
+  socket.on('spectate', ({ roomId: raw }, cb) => {
+    const result = rooms.spectate(raw, socket.id);
+    if (!result.success) { cb(result); return; }
+    socket.join(result.roomId!);
+    cb({ success: true });
+    const game = rooms.getGame(result.roomId!);
+    if (game) socket.emit('gameState', game.stateForSpectator());
+  });
+
+  // ── Phase-1 bid ──────────────────────────────────────────────────────────────
+  socket.on('bid1', ({ action }, cb) => {
+    const roomId = rooms.getRoomId(socket.id);
+    if (!roomId) { cb({ success: false, error: 'Not in a room' }); return; }
+    const game = rooms.getGame(roomId);
+    if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
+
+    const result = game.placeBid1(socket.id, action);
+    cb(result);
+    if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Phase-2 bid ──────────────────────────────────────────────────────────────
+  socket.on('bid2', ({ tricks }, cb) => {
+    const roomId = rooms.getRoomId(socket.id);
+    if (!roomId) { cb({ success: false, error: 'Not in a room' }); return; }
+    const game = rooms.getGame(roomId);
+    if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
+
+    const result = game.placeBid2(socket.id, tricks);
+    cb(result);
+    if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Play card ────────────────────────────────────────────────────────────────
+  socket.on('playCard', ({ cardIndex }, cb) => {
+    const roomId = rooms.getRoomId(socket.id);
+    if (!roomId) { cb({ success: false, error: 'Not in a room' }); return; }
+    const game = rooms.getGame(roomId);
+    if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
+
+    const result = game.playCard(socket.id, cardIndex);
+    cb(result);
+    if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Next hand ────────────────────────────────────────────────────────────────
+  socket.on('nextHand', cb => {
+    const roomId = rooms.getRoomId(socket.id);
+    if (!roomId) { cb({ success: false, error: 'Not in a room' }); return; }
+    const game = rooms.getGame(roomId);
+    if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
+
+    const result = game.nextHand();
+    cb(result);
+    if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Disconnect ───────────────────────────────────────────────────────────────
+  socket.on('disconnect', () => {
+    const roomId = rooms.getRoomId(socket.id);
+    rooms.disconnect(socket.id);
+    if (roomId) broadcastState(roomId);
+  });
+});
+
+const PORT = Number(process.env.PORT) || 3001;
+httpServer.listen(PORT, () => console.log(`🃏  Whist server on http://localhost:${PORT}`));

@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-felt-darker text-white font-sans;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /* ── Table felt ── */
+  .felt-table {
+    background: radial-gradient(ellipse at center, #1a6b3c 0%, #0f4226 60%, #0a2e1a 100%);
+  }
+
+  /* ── Card hover lift (non-disabled) ── */
+  .card-hover-lift:hover {
+    transform: translateY(-14px) scale(1.06) !important;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.28), 0 4px 8px rgba(0,0,0,0.15) !important;
+    z-index: 30 !important;
+  }
+  /* Don't override selected lift */
+  .card-hover-lift.card-no-hover:hover {
+    transform: none !important;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700
+           text-white font-semibold py-2 px-6 rounded-lg
+           transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 active:bg-slate-800
+           text-white font-semibold py-2 px-6 rounded-lg
+           transition-colors duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-6
+           rounded-lg transition-colors duration-150;
+  }
+
+  /* ── Input ── */
+  .field {
+    @apply w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2.5
+           text-white placeholder-slate-400 focus:outline-none focus:ring-2
+           focus:ring-emerald-500 transition;
+  }
+}
+
+/* ── Animations ── */
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  80%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px 2px  rgba(251,191,36,0.35); }
+  50%       { box-shadow: 0 0 20px 6px rgba(251,191,36,0.65); }
+}
+
+.animate-bounce-in  { animation: bounceIn 0.4s cubic-bezier(0.36,0.07,0.19,0.97); }
+.animate-slide-up   { animation: slideUp  0.3s ease-out; }
+.animate-pulse-glow { animation: pulseGlow 2s infinite; }
+
+/* ── Hand fan overlap ── */
+/* Cards overlap so the fan fits the screen */
+.hand-fan {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 4px;
+  /* let cards overlap; JS can also apply inline margin */
+}
+.hand-fan > *:not(:first-child) {
+  margin-left: -28px;
+}
+
+/* Suit colours (inline fallback) */
+.suit-red   { color: #c0392b; }
+.suit-black { color: #1a1a2e; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 9999px; }
