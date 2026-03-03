@@ -5,3 +5,8 @@ client/dist/
 server/dist/
 .env
 
+# SSH keys — never commit these
+*.key
+*.key.pub
+*.pem
+

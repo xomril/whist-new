@@ -11,16 +11,20 @@ const httpServer = createServer(app);
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    // In production the client is served from the same origin, so allow all.
+    // Set CLIENT_URL env var to restrict to a specific domain if needed.
+    origin: process.env.CLIENT_URL || '*',
     methods: ['GET', 'POST'],
   },
 });
 
 const rooms = new RoomManager();
 
-// Serve built client in production
+// Serve built client in production.
+// In Docker the layout is:  /app/server/dist/index.js  →  /app/client/dist/
+// In local dev (ts-node):   /server/src/index.ts       →  /client/dist/
 if (process.env.NODE_ENV === 'production') {
-  const clientDist = path.join(__dirname, '../../client/dist');
+  const clientDist = path.resolve(__dirname, '..', '..', 'client', 'dist');
   app.use(express.static(clientDist));
   app.get('*', (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }
