@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { GameStateView, PlayerView, SUIT_SYMBOL, TRUMP_LABEL } from '../types';
+import { GameStateView, PlayerView, SUIT_SYMBOL } from '../types';
 import { socket } from '../socket';
+import { useT, LangToggle } from '../i18n';
+import { sfxPlayCard } from '../sounds';
 import CardComponent, { CardBack } from './CardComponent';
 import BidPhase1 from './BidPhase1';
 import BidPhase2 from './BidPhase2';
@@ -45,6 +47,7 @@ function OpponentInfo({ player, isActive, totalTricks }: { player: PlayerView; i
 
 // ── Main board ────────────────────────────────────────────────────────────────
 export default function GameBoard({ state, onError }: Props) {
+  const { t, tTrump } = useT();
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
 
@@ -100,6 +103,7 @@ export default function GameBoard({ state, onError }: Props) {
       // Double-click / second tap → confirm play
       socket.emit('playCard', { cardIndex: idx }, res => {
         if (!res.success) onError(res.error ?? 'Cannot play that card');
+        else sfxPlayCard();
         setSelectedCardIndex(null);
       });
     } else {
@@ -111,6 +115,7 @@ export default function GameBoard({ state, onError }: Props) {
     if (selectedCardIndex === null) return;
     socket.emit('playCard', { cardIndex: selectedCardIndex }, res => {
       if (!res.success) onError(res.error ?? 'Cannot play that card');
+      else sfxPlayCard();
       setSelectedCardIndex(null);
     });
   };
@@ -122,20 +127,20 @@ export default function GameBoard({ state, onError }: Props) {
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-700/50 text-xs flex-shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-slate-400">Hand <span className="text-white font-bold">{handNumber}</span> / {state.targetScore}</span>
+          <span className="text-slate-400">{t('handOf', handNumber, state.targetScore)}</span>
           {trumpSuit && (
             <span className="bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 px-2 py-0.5 rounded-full font-semibold">
-              Trump: {TRUMP_LABEL[trumpSuit]}
+              {t('trump', tTrump(trumpSuit))}
             </span>
           )}
           {state.isOverGame !== undefined && (
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium border
               ${state.isOverGame ? 'bg-orange-900/40 text-orange-300 border-orange-700/50' : 'bg-sky-900/40 text-sky-300 border-sky-700/50'}`}>
-              {state.isOverGame ? 'Over' : 'Under'}
+              {state.isOverGame ? t('over') : t('under')}
             </span>
           )}
           {phase === 'playing' && (
-            <span className="text-slate-400">Trick <span className="text-white font-bold">{trickNumber}</span>/{totalTricks}</span>
+            <span className="text-slate-400">{t('trick', trickNumber, totalTricks)}</span>
           )}
         </div>
 
@@ -147,16 +152,17 @@ export default function GameBoard({ state, onError }: Props) {
               phase === 'playing' ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' :
               'bg-slate-800 text-slate-400 border border-slate-600'
             }`}>
-            {phase === 'bid1' ? '🎯 Trump Bid' :
-             phase === 'bid2' ? '🔢 Trick Bid' :
-             phase === 'playing' ? '🃏 Playing' :
+            {phase === 'bid1' ? t('phase1Bid') :
+             phase === 'bid2' ? t('phase2Bid') :
+             phase === 'playing' ? t('phasePlay') :
              phase}
           </span>
+          <LangToggle />
           <button
             className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
             onClick={() => setShowScoreboard(s => !s)}
           >
-            {showScoreboard ? 'Hide' : 'Scores'}
+            {t('colScore')}
           </button>
         </div>
       </div>
@@ -226,20 +232,19 @@ export default function GameBoard({ state, onError }: Props) {
             {/* Whose turn indicator during play */}
             {phase === 'playing' && !isMyTurn && (
               <div className="bg-slate-900/80 rounded-lg px-4 py-2 border border-slate-700 text-sm text-slate-300 animate-pulse">
-                <span className="text-emerald-400 font-semibold">{players[currentPlayerIndex]?.name}</span>'s turn
+                {t('sTurn', players[currentPlayerIndex]?.name ?? '')}
               </div>
             )}
 
-            {/* Confirm play button */}
             {phase === 'playing' && isMyTurn && selectedCardIndex !== null && (
               <button className="btn-primary animate-slide-up px-8 py-2.5" onClick={confirmPlay}>
-                Play Card ✓
+                ✓
               </button>
             )}
 
             {phase === 'playing' && isMyTurn && selectedCardIndex === null && (
               <div className="text-emerald-400 font-semibold text-sm animate-pulse">
-                Your turn — select a card
+                {t('turnToBid', me?.name ?? '')}
               </div>
             )}
           </div>
@@ -269,12 +274,12 @@ export default function GameBoard({ state, onError }: Props) {
                 {me.isDeclarer && <span className="text-[10px] bg-yellow-800 text-yellow-300 px-1 rounded">★ Declarer</span>}
               </div>
               <div className="flex gap-3 text-slate-400 text-xs">
-                <span>Score: <span className={`font-bold ${me.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{me.score}</span></span>
+                <span>{t('colScore')}: <span className={`font-bold ${me.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{me.score}</span></span>
                 {me.bid2 !== undefined && (
-                  <span>Bid: <span className="text-white font-bold">{me.bid2}</span></span>
+                  <span>{t('colBid2')}: <span className="text-white font-bold">{me.bid2}</span></span>
                 )}
                 {me.tricksTaken > 0 && (
-                  <span>Won: <span className={`font-bold ${me.tricksTaken === me.bid2 ? 'text-emerald-400' : 'text-orange-400'}`}>{me.tricksTaken}</span></span>
+                  <span>{t('colWon')}: <span className={`font-bold ${me.tricksTaken === me.bid2 ? 'text-emerald-400' : 'text-orange-400'}`}>{me.tricksTaken}</span></span>
                 )}
               </div>
               {trumpSuit && (

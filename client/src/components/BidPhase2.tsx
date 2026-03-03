@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { socket } from '../socket';
+import { useT } from '../i18n';
+import { sfxBid } from '../sounds';
 
 interface Props {
   totalTricks: number;
@@ -9,19 +11,21 @@ interface Props {
 }
 
 export default function BidPhase2({ totalTricks, forbiddenValue, isMyTurn, onError }: Props) {
+  const { t } = useT();
   const [bid, setBid] = useState(0);
   const [loading, setLoading] = useState(false);
 
   const submit = () => {
     if (!isMyTurn) return;
     if (bid === forbiddenValue) {
-      onError(`You cannot bid ${forbiddenValue} — it would make the total exactly ${totalTricks}`);
+      onError(t('cannotBid', forbiddenValue));
       return;
     }
     setLoading(true);
     socket.emit('bid2', { tricks: bid }, res => {
       setLoading(false);
       if (!res.success) onError(res.error ?? 'Invalid bid');
+      else sfxBid();
     });
   };
 
@@ -29,17 +33,16 @@ export default function BidPhase2({ totalTricks, forbiddenValue, isMyTurn, onErr
 
   return (
     <div className="bg-slate-900/95 rounded-2xl p-5 border border-slate-700 shadow-2xl w-full max-w-xs">
-      <h3 className="text-white font-bold text-center mb-1 text-base">Phase 2 · Bid Tricks</h3>
+      <h3 className="text-white font-bold text-center mb-1 text-base">{t('bid2Title')}</h3>
       <p className="text-center text-xs text-slate-400 mb-3">
-        How many tricks will you take?
+        {t('bid2Question')}
         {forbiddenValue !== undefined && (
-          <span className="block text-red-400 mt-0.5">Cannot bid {forbiddenValue}</span>
+          <span className="block text-red-400 mt-0.5">{t('cannotBid', forbiddenValue)}</span>
         )}
       </p>
 
       {isMyTurn ? (
         <>
-          {/* Grid of bid buttons */}
           <div className="flex flex-wrap gap-1.5 justify-center mb-4">
             {buttons.map(n => {
               const isForbidden = n === forbiddenValue;
@@ -68,13 +71,11 @@ export default function BidPhase2({ totalTricks, forbiddenValue, isMyTurn, onErr
             onClick={submit}
             disabled={loading || bid === forbiddenValue}
           >
-            Bid {bid} trick{bid !== 1 ? 's' : ''}
+            {t('btnBidTricks', bid, '')}
           </button>
         </>
       ) : (
-        <div className="text-center text-slate-400 py-4 animate-pulse text-sm">
-          Waiting for player to bid…
-        </div>
+        <div className="text-center text-slate-400 py-4 animate-pulse text-sm">{t('waitingBid')}</div>
       )}
     </div>
   );

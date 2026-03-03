@@ -1,9 +1,10 @@
-import { GameStateView, PlayerView, TRUMP_LABEL, SUIT_SYMBOL } from '../types';
+import { GameStateView, PlayerView, SUIT_SYMBOL } from '../types';
 import CardComponent from './CardComponent';
 import TrickArea from './TrickArea';
 import Scoreboard from './Scoreboard';
 import HandSummary from './HandSummary';
 import GameOver from './GameOver';
+import { useT, LangToggle } from '../i18n';
 
 interface Props {
   state: GameStateView;
@@ -68,6 +69,7 @@ function PlayerPanel({
 }
 
 export default function SpectatorBoard({ state, onError }: Props) {
+  const { t, tTrump } = useT();
   const {
     players, allHands, currentPlayerIndex, currentTrick,
     completedTricks, trumpSuit, phase, handNumber, totalTricks,
@@ -89,41 +91,35 @@ export default function SpectatorBoard({ state, onError }: Props) {
       <div className="flex items-center justify-between px-4 py-2 bg-slate-900/80 border-b border-slate-700/50 text-xs flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-purple-400 font-semibold border border-purple-700/50 bg-purple-900/30 px-2 py-0.5 rounded-full">
-            👁 Spectating
+            {t('spectating')}
           </span>
-          <span className="text-slate-400">Hand <span className="text-white font-bold">{handNumber}</span></span>
+          <span className="text-slate-400">{t('handOf', handNumber, state.targetScore)}</span>
           {trumpSuit && (
             <span className="bg-yellow-900/40 text-yellow-300 border border-yellow-700/50 px-2 py-0.5 rounded-full font-semibold">
-              Trump: {TRUMP_LABEL[trumpSuit]}
-              {trumpSuit !== 'notrumps' && (
-                <span className="ml-1">{SUIT_SYMBOL[trumpSuit as import('../types').Suit]}</span>
-              )}
+              {t('trump', tTrump(trumpSuit))}
             </span>
           )}
           {state.isOverGame !== undefined && (
             <span className={`px-2 py-0.5 rounded-full border text-xs font-medium
               ${state.isOverGame ? 'bg-orange-900/40 text-orange-300 border-orange-700/50' : 'bg-sky-900/40 text-sky-300 border-sky-700/50'}`}>
-              {state.isOverGame ? 'Over' : 'Under'}
+              {state.isOverGame ? t('over') : t('under')}
             </span>
           )}
           {phase === 'playing' && (
-            <span className="text-slate-400">
-              Trick <span className="text-white font-bold">{state.trickNumber}</span>/{totalTricks}
-            </span>
+            <span className="text-slate-400">{t('trick', state.trickNumber, totalTricks)}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
+          <LangToggle />
           <span className={`px-2 py-0.5 rounded-full border text-xs font-semibold
             ${phase === 'bid1' ? 'bg-purple-900/40 text-purple-300 border-purple-700/50' :
               phase === 'bid2' ? 'bg-blue-900/40 text-blue-300 border-blue-700/50' :
               phase === 'playing' ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' :
               'bg-slate-800 text-slate-400 border-slate-600'}`}>
-            {phase === 'bid1' ? '🎯 Trump Bid' : phase === 'bid2' ? '🔢 Trick Bid' : phase === 'playing' ? '🃏 Playing' : phase}
+            {phase === 'bid1' ? t('phase1Bid') : phase === 'bid2' ? t('phase2Bid') : phase === 'playing' ? t('phasePlay') : phase}
           </span>
           {phase === 'playing' && (
-            <span className="text-slate-300">
-              <span className="text-emerald-400 font-bold">{players[currentPlayerIndex]?.name}</span>'s turn
-            </span>
+            <span className="text-slate-300">{t('sTurn', players[currentPlayerIndex]?.name ?? '')}</span>
           )}
         </div>
       </div>
@@ -174,14 +170,14 @@ export default function SpectatorBoard({ state, onError }: Props) {
             {(phase === 'bid1' || phase === 'bid2') && (
               <div className="bg-slate-900/80 rounded-xl border border-slate-700 px-5 py-3 text-center">
                 <p className="text-slate-300 text-sm">
-                  {phase === 'bid1' ? '🎯 Phase 1 — bidding for trump' : '🔢 Phase 2 — bidding trick count'}
+                  {phase === 'bid1' ? t('phase1Info') : t('phase2Info')}
                 </p>
                 <p className="text-emerald-400 font-semibold mt-1">
-                  {players[currentPlayerIndex]?.name}'s turn to bid
+                  {t('turnToBid', players[currentPlayerIndex]?.name ?? '')}
                 </p>
                 {state.currentHighBid1 && phase === 'bid1' && (
                   <p className="text-yellow-400 text-xs mt-1">
-                    Current high: {state.currentHighBid1.tricks} {TRUMP_LABEL[state.currentHighBid1.suit]}
+                    {t('currentHigh', state.currentHighBid1.tricks, tTrump(state.currentHighBid1.suit))}
                   </p>
                 )}
               </div>

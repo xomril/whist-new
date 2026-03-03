@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { RoomInfo } from '../types';
 import { socket } from '../socket';
+import { useT, LangToggle } from '../i18n';
 
 interface Props {
   room: RoomInfo;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function WaitingRoom({ room, onError }: Props) {
+  const { t } = useT();
   const [addingBots, setAddingBots] = useState(false);
   const isHost = room.hostId === socket.id;
   const emptySlots = room.maxPlayers - room.players.length;
@@ -27,9 +29,9 @@ export default function WaitingRoom({ room, onError }: Props) {
   return (
     <div className="flex flex-col items-center justify-center flex-1 p-6">
       <div className="bg-slate-900/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-700">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Waiting for Players</h2>
-          <p className="text-slate-400 mt-1 text-sm">Share the room code with friends</p>
+        <div className="flex justify-between items-start mb-6">
+          <h2 className="text-2xl font-bold text-white">{t('waitingRoom')}</h2>
+          <LangToggle />
         </div>
 
         {/* Room code */}
@@ -38,7 +40,7 @@ export default function WaitingRoom({ room, onError }: Props) {
           onClick={copyCode}
           title="Click to copy"
         >
-          <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Room Code</p>
+          <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">{t('labelRoomCode')}</p>
           <p className="text-4xl font-black tracking-widest text-emerald-400 font-mono">{room.id}</p>
           <p className="text-xs text-slate-500 mt-2 group-hover:text-slate-400 transition-colors">
             Click to copy
@@ -60,12 +62,12 @@ export default function WaitingRoom({ room, onError }: Props) {
                 <div className="flex gap-1.5">
                   {i === 0 && (
                     <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">
-                      Host
+                      {t('tagHost')}
                     </span>
                   )}
                   {isBot && (
                     <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-medium">
-                      Bot
+                      {t('tagBot')}
                     </span>
                   )}
                 </div>
@@ -73,18 +75,14 @@ export default function WaitingRoom({ room, onError }: Props) {
             );
           })}
 
-          {/* Empty slots */}
           {Array.from({ length: emptySlots }).map((_, i) => (
             <div key={`empty-${i}`} className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-3 border border-dashed border-slate-600">
-              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-500">
-                ?
-              </div>
-              <span className="text-slate-500 italic">Waiting for player…</span>
+              <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-500">?</div>
+              <span className="text-slate-500 italic">{t('waitingEllipsis')}</span>
             </div>
           ))}
         </div>
 
-        {/* Add Bots button — only for host, only if there are empty slots */}
         {isHost && emptySlots > 0 && (
           <button
             className="w-full mb-4 py-3 px-6 rounded-xl font-semibold transition-all border
@@ -94,31 +92,20 @@ export default function WaitingRoom({ room, onError }: Props) {
             onClick={handleAddBots}
             disabled={addingBots}
           >
-            {addingBots ? (
-              <>
-                <span className="animate-spin">⚙</span>
-                Adding bots…
-              </>
-            ) : (
-              <>
-                🤖 Fill with Bots
-                <span className="bg-blue-900/60 text-blue-300 text-xs px-2 py-0.5 rounded-full font-normal">
-                  {emptySlots} slot{emptySlots !== 1 ? 's' : ''}
-                </span>
-              </>
-            )}
+            {addingBots ? <><span className="animate-spin">⚙</span>{t('waitingEllipsis')}</> : t('fillBots')}
           </button>
         )}
 
-        {/* Status */}
         <div className="text-center text-slate-400 text-sm">
           <div className="flex items-center justify-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
-            {room.players.length}/{room.maxPlayers} players joined
-            {room.players.length < room.maxPlayers ? ' — waiting…' : ' — starting soon!'}
+            {t('playersStatus', room.players.length, room.maxPlayers)}
+            {room.players.length < room.maxPlayers
+              ? ` — ${t('waitingEllipsis')}`
+              : ` — ${t('startingSoon')}`}
           </div>
           <p className="mt-2 text-slate-500">
-            Rounds: <span className="text-emerald-400">{room.targetScore}</span>
+            {t('rounds', room.targetScore)}
           </p>
         </div>
       </div>

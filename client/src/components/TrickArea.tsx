@@ -1,5 +1,6 @@
 import { TrickCard, CompletedTrick } from '../types';
 import CardComponent from './CardComponent';
+import { useT } from '../i18n';
 
 interface Props {
   currentTrick: TrickCard[];
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function TrickArea({ currentTrick, lastTrick, playerNames, myIndex }: Props) {
+  const { t } = useT();
   const trickToShow = currentTrick.length > 0 ? currentTrick : (lastTrick?.cards ?? []);
   const isLast = currentTrick.length === 0 && !!lastTrick;
 
@@ -17,12 +19,12 @@ export default function TrickArea({ currentTrick, lastTrick, playerNames, myInde
     <div className="relative flex flex-col items-center gap-2">
       {isLast && lastTrick && (
         <div className="bg-yellow-500/90 text-black text-xs font-bold px-4 py-1 rounded-full shadow-lg">
-          {lastTrick.winnerName} won the trick!
+          {t('wonTrick', lastTrick.winnerName)}
         </div>
       )}
 
       {trickToShow.length === 0 ? (
-        <div className="text-slate-500 text-sm italic py-4">No cards played yet</div>
+        <div className="text-slate-500 text-sm italic py-4">{t('noCardsYet')}</div>
       ) : (
         <div className="flex flex-wrap gap-3 items-end justify-center">
           {trickToShow.map((tc, i) => {

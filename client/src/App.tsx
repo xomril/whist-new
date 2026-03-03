@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { socket } from './socket';
 import { GameStateView, RoomInfo } from './types';
+import { LanguageProvider } from './i18n';
+import { sfxDeal, sfxTrickWon, sfxTrickComplete, sfxGameWon, sfxGameLost } from './sounds';
 import Lobby from './components/Lobby';
 import WaitingRoom from './components/WaitingRoom';
 import GameBoard from './components/GameBoard';
@@ -8,7 +10,7 @@ import SpectatorBoard from './components/SpectatorBoard';
 
 type View = 'lobby' | 'waiting' | 'game' | 'spectate';
 
-export default function App() {
+function AppInner() {
   const [view, setView] = useState<View>('lobby');
   const [playerName, setPlayerName] = useState('');
   const [roomId, setRoomId] = useState('');
@@ -16,10 +18,48 @@ export default function App() {
   const [gameState, setGameState] = useState<GameStateView | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  const prevState = useRef<GameStateView | null>(null);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
+
+  // Sound triggers on game state changes
+  useEffect(() => {
+    if (!gameState) return;
+    const prev = prevState.current;
+
+    if (prev) {
+      // New hand dealt
+      if (gameState.handNumber > prev.handNumber) {
+        sfxDeal();
+      }
+
+      // Trick completed
+      if (gameState.completedTricks.length > prev.completedTricks.length) {
+        const latest = gameState.completedTricks[gameState.completedTricks.length - 1];
+        const myId = gameState.players[gameState.myIndex]?.id;
+        if (latest?.winnerId === myId) {
+          sfxTrickWon();
+        } else {
+          sfxTrickComplete();
+        }
+      }
+
+      // Game over
+      if (gameState.phase === 'gameOver' && prev.phase !== 'gameOver') {
+        const myId = gameState.players[gameState.myIndex]?.id;
+        if (gameState.winner?.id === myId) {
+          sfxGameWon();
+        } else {
+          sfxGameLost();
+        }
+      }
+    }
+
+    prevState.current = gameState;
+  }, [gameState]);
 
   useEffect(() => {
     socket.on('roomUpdated', ({ room: r }) => {
@@ -59,7 +99,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen felt-table flex flex-col">
-      {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-700 text-white
                         px-6 py-3 rounded-xl shadow-xl animate-bounce-in text-sm font-medium">
@@ -81,16 +120,20 @@ export default function App() {
       )}
 
       {view === 'game' && gameState && !gameState.isSpectator && (
-        <GameBoard
-          state={gameState}
-          playerName={playerName}
-          onError={showToast}
-        />
+        <GameBoard state={gameState} playerName={playerName} onError={showToast} />
       )}
 
       {(view === 'spectate' || (view === 'game' && gameState?.isSpectator)) && gameState && (
         <SpectatorBoard state={gameState} onError={showToast} />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppInner />
+    </LanguageProvider>
   );
 }
