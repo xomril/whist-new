@@ -1,0 +1,21 @@
+name: Deploy to Oracle
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 129.159.150.83
+          username: opc
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            export NVM_DIR="$HOME/.nvm"
+            source "$NVM_DIR/nvm.sh"
+            cd /home/opc/whist
+            ./deploy.sh
