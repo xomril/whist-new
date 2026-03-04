@@ -185,16 +185,10 @@ export class WhistGame {
     const n = this.maxPlayers;
     const declarerId = this.players[this.declarerIndex!].id;
 
-    // Order: dealer+1, dealer+2, … declarer (declarer always last)
+    // Order: declarer+1, declarer+2, … declarer (declarer always last)
     const order: string[] = [];
     for (let i = 1; i <= n; i++) {
-      order.push(this.players[(this.dealerIndex + i) % n].id);
-    }
-    // Rotate so declarer is last
-    const di = order.indexOf(declarerId);
-    if (di !== order.length - 1) {
-      order.splice(di, 1);
-      order.push(declarerId);
+      order.push(this.players[(this.declarerIndex! + i) % n].id);
     }
 
     this.bid2Order = order;
