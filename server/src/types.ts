@@ -34,6 +34,21 @@ export interface CompletedTrick {
   leadSuit: Suit;
 }
 
+// ── Hand history ─────────────────────────────────────────────────────────────
+export interface HandRecord {
+  handNumber: number;
+  trumpSuit: TrumpSuit;
+  isOverGame: boolean;
+  results: {
+    playerId: string;
+    playerName: string;
+    bid2: number;
+    tricksTaken: number;
+    scoreDelta: number;
+    scoreAfter: number;
+  }[];
+}
+
 // ── Game phase ───────────────────────────────────────────────────────────────
 export type GamePhase =
   | 'waiting'   // lobby / not started
@@ -84,6 +99,7 @@ export interface GameStateView {
   winner?: PlayerView;
   targetScore: number;
   validCardIndices?: number[];
+  handHistory: HandRecord[];
 }
 
 // ── Room info sent to lobby ──────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import TrickArea from './TrickArea';
 import Scoreboard from './Scoreboard';
 import HandSummary from './HandSummary';
 import GameOver from './GameOver';
+import HistoryModal from './HistoryModal';
 
 interface Props {
   state: GameStateView;
@@ -50,6 +51,7 @@ export default function GameBoard({ state, onError }: Props) {
   const { t, tTrump } = useT();
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const {
     phase, myHand, players, myIndex, currentPlayerIndex,
@@ -158,6 +160,12 @@ export default function GameBoard({ state, onError }: Props) {
              phase}
           </span>
           <LangToggle />
+          <button
+            className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
+            onClick={() => setShowHistory(true)}
+          >
+            {t('historyBtn')}
+          </button>
           <button
             className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
             onClick={() => setShowScoreboard(s => !s)}
@@ -335,6 +343,13 @@ export default function GameBoard({ state, onError }: Props) {
       )}
       {phase === 'gameOver' && (
         <GameOver state={state} />
+      )}
+      {showHistory && (
+        <HistoryModal
+          history={state.handHistory}
+          players={players}
+          onClose={() => setShowHistory(false)}
+        />
       )}
     </div>
   );

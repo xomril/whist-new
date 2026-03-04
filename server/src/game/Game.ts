@@ -1,6 +1,6 @@
 import {
   Card, Bid1, Bid1Action, TrumpSuit, GamePhase,
-  GameStateView, PlayerView, TrickCard, CompletedTrick,
+  GameStateView, PlayerView, TrickCard, CompletedTrick, HandRecord,
 } from '../types';
 import {
   createDeck, shuffle, totalTricks, compareBid, trickWinner,
@@ -45,6 +45,9 @@ export class WhistGame {
   // trump / declarer
   declarerIndex?: number;
   trumpSuit?: TrumpSuit;
+
+  // hand history
+  handHistory: HandRecord[] = [];
 
   // play
   currentTrick: TrickCard[] = [];
@@ -308,9 +311,25 @@ export class WhistGame {
 
   // ── Hand end ───────────────────────────────────────────────────────────────
   private endHand(): void {
+    const record: HandRecord = {
+      handNumber: this.handNumber,
+      trumpSuit: this.trumpSuit!,
+      isOverGame: this.isOverGame ?? false,
+      results: [],
+    };
     for (const p of this.players) {
-      p.score += calcScore(p.bid2 ?? 0, p.tricksTaken, this.isOverGame ?? false);
+      const delta = calcScore(p.bid2 ?? 0, p.tricksTaken, this.isOverGame ?? false);
+      p.score += delta;
+      record.results.push({
+        playerId: p.id,
+        playerName: p.name,
+        bid2: p.bid2 ?? 0,
+        tricksTaken: p.tricksTaken,
+        scoreDelta: delta,
+        scoreAfter: p.score,
+      });
     }
+    this.handHistory.push(record);
     this.phase = this.handNumber >= this.targetScore ? 'gameOver' : 'handEnd';
     if (this.phase === 'handEnd') {
       this.dealerIndex = (this.dealerIndex + 1) % this.maxPlayers;
@@ -365,6 +384,7 @@ export class WhistGame {
       bid2ForbiddenValue: undefined,
       winner,
       targetScore: this.targetScore,
+      handHistory: this.handHistory,
     };
   }
 
@@ -412,6 +432,7 @@ export class WhistGame {
       bid2ForbiddenValue: this.bid2ForbiddenValue,
       winner,
       targetScore: this.targetScore,
+      handHistory: this.handHistory,
       validCardIndices:
         this.phase === 'playing' && this.players[this.currentPlayerIndex]?.id === playerId
           ? this.validCardIndices(playerId)

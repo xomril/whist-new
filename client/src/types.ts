@@ -39,6 +39,20 @@ export interface PlayerView {
   isDeclarer: boolean;
 }
 
+export interface HandRecord {
+  handNumber: number;
+  trumpSuit: TrumpSuit;
+  isOverGame: boolean;
+  results: {
+    playerId: string;
+    playerName: string;
+    bid2: number;
+    tricksTaken: number;
+    scoreDelta: number;
+    scoreAfter: number;
+  }[];
+}
+
 export interface GameStateView {
   roomId: string;
   phase: GamePhase;
@@ -64,6 +78,7 @@ export interface GameStateView {
   winner?: PlayerView;
   targetScore: number;
   validCardIndices?: number[];
+  handHistory: HandRecord[];
 }
 
 export interface RoomInfo {

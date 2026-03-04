@@ -5,6 +5,8 @@ import Scoreboard from './Scoreboard';
 import HandSummary from './HandSummary';
 import GameOver from './GameOver';
 import { useT, LangToggle } from '../i18n';
+import HistoryModal from './HistoryModal';
+import { useState } from 'react';
 
 interface Props {
   state: GameStateView;
@@ -70,6 +72,7 @@ function PlayerPanel({
 
 export default function SpectatorBoard({ state, onError }: Props) {
   const { t, tTrump } = useT();
+  const [showHistory, setShowHistory] = useState(false);
   const {
     players, allHands, currentPlayerIndex, currentTrick,
     completedTricks, trumpSuit, phase, handNumber, totalTricks,
@@ -110,6 +113,12 @@ export default function SpectatorBoard({ state, onError }: Props) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button
+            className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors text-xs"
+            onClick={() => setShowHistory(true)}
+          >
+            {t('historyBtn')}
+          </button>
           <LangToggle />
           <span className={`px-2 py-0.5 rounded-full border text-xs font-semibold
             ${phase === 'bid1' ? 'bg-purple-900/40 text-purple-300 border-purple-700/50' :
@@ -229,6 +238,13 @@ export default function SpectatorBoard({ state, onError }: Props) {
       {/* Modals */}
       {phase === 'handEnd' && <HandSummary state={state} onError={onError} />}
       {phase === 'gameOver' && <GameOver state={state} />}
+      {showHistory && (
+        <HistoryModal
+          history={state.handHistory}
+          players={players}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,28 @@
+# fly.toml — Fly.io deployment config for Israeli Whist
+# Docs: https://fly.io/docs/reference/configuration/
+
+app = "israeli-whist"   # change to your chosen app name
+primary_region = "iad"  # us-east (or: lhr=London, fra=Frankfurt, sin=Singapore)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT     = "8080"
+
+[http_service]
+  internal_port        = 8080
+  force_https          = true
+  auto_stop_machines   = false   # keep alive — important for WebSockets
+  auto_start_machines  = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type       = "connections"
+    hard_limit = 500
+    soft_limit = 400
+
+[[vm]]
+  size   = "shared-cpu-1x"   # free tier machine
+  memory = "256mb"
