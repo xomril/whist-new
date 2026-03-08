@@ -24,7 +24,7 @@ export interface CompletedTrick {
 }
 
 export type GamePhase =
-  | 'waiting' | 'bid1' | 'bid2' | 'playing' | 'handEnd' | 'gameOver';
+  | 'waiting' | 'bid1' | 'cardExchange' | 'bid2' | 'playing' | 'handEnd' | 'gameOver';
 
 export interface PlayerView {
   id: string;
@@ -67,6 +67,7 @@ export interface GameStateView {
   declarerIndex?: number;
   trumpSuit?: TrumpSuit;
   currentHighBid1?: Bid1;
+  awaitingDeclarerConfirm?: boolean;
   currentTrick: TrickCard[];
   completedTricks: CompletedTrick[];
   trickNumber: number;
@@ -79,6 +80,9 @@ export interface GameStateView {
   targetScore: number;
   validCardIndices?: number[];
   handHistory: HandRecord[];
+  exchangeRound?: number;
+  exchangeSubmitted?: boolean;
+  exchangePendingCount?: number;
 }
 
 export interface RoomInfo {

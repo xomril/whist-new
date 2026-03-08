@@ -120,6 +120,18 @@ export function sfxGameWon() {
   } catch { /* ignore */ }
 }
 
+/** Urgent triple-beep — you haven't acted in 30 s */
+export function sfxTurnReminder() {
+  try {
+    const c = ac();
+    const t = c.currentTime;
+    // Three short staccato beeps, rising in pitch
+    [880, 1047, 1319].forEach((f, i) => {
+      tone(f, 'triangle', t + i * 0.18, 0.10, 0.22);
+    });
+  } catch { /* ignore */ }
+}
+
 /** Descending tones — game over, you lost */
 export function sfxGameLost() {
   try {

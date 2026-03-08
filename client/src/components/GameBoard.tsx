@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GameStateView, PlayerView, SUIT_SYMBOL } from '../types';
 import { socket } from '../socket';
 import { useT, LangToggle } from '../i18n';
-import { sfxPlayCard } from '../sounds';
+import { sfxPlayCard, sfxTurnReminder } from '../sounds';
 import CardComponent, { CardBack } from './CardComponent';
 import BidPhase1 from './BidPhase1';
 import BidPhase2 from './BidPhase2';
+import CardExchange from './CardExchange';
 import TrickArea from './TrickArea';
 import Scoreboard from './Scoreboard';
 import HandSummary from './HandSummary';
@@ -50,8 +51,10 @@ function OpponentInfo({ player, isActive, totalTricks }: { player: PlayerView; i
 export default function GameBoard({ state, onError }: Props) {
   const { t, tTrump } = useT();
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
+  const [exchangeSelected, setExchangeSelected] = useState<number[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showTurnReminder, setShowTurnReminder] = useState(false);
 
   const {
     phase, myHand, players, myIndex, currentPlayerIndex,
@@ -60,11 +63,26 @@ export default function GameBoard({ state, onError }: Props) {
   } = state;
 
   const isMyTurn = myIndex === currentPlayerIndex;
+
+  // 30-second idle reminder
+  useEffect(() => {
+    const activeTurnPhases = ['bid1', 'bid2', 'playing', 'cardExchange'];
+    if (!isMyTurn || state.isSpectator || !activeTurnPhases.includes(phase)) {
+      setShowTurnReminder(false);
+      return;
+    }
+    setShowTurnReminder(false); // reset on every new turn
+    const id = setTimeout(() => {
+      setShowTurnReminder(true);
+      sfxTurnReminder();
+    }, 30_000);
+    return () => clearTimeout(id);
+  }, [isMyTurn, currentPlayerIndex, phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const me = players[myIndex];
   const lastTrick = completedTricks[completedTricks.length - 1];
 
   // Sort hand by suit (♠♥♦♣) then rank (2→A), keeping original server indices
-  const SUIT_ORDER: Record<string, number> = { spades: 0, hearts: 1, diamonds: 2, clubs: 3 };
+  const SUIT_ORDER: Record<string, number> = { spades: 0, hearts: 1, clubs: 2, diamonds: 3 };
   const RANK_ORDER: Record<string, number> = {
     '2':0,'3':1,'4':2,'5':3,'6':4,'7':5,'8':6,'9':7,'10':8,'J':9,'Q':10,'K':11,'A':12,
   };
@@ -122,6 +140,19 @@ export default function GameBoard({ state, onError }: Props) {
     });
   };
 
+  const handleExchangeToggle = (idx: number) => {
+    setExchangeSelected(prev =>
+      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+    );
+  };
+
+  const handleExchangeSubmit = () => {
+    socket.emit('submitExchange', { cardIndices: exchangeSelected }, res => {
+      if (!res.success) onError(res.error ?? 'Cannot submit exchange');
+      else setExchangeSelected([]);
+    });
+  };
+
   const minBidTricks = state.maxPlayers === 4 ? 5 : 6;
 
   return (
@@ -150,11 +181,13 @@ export default function GameBoard({ state, onError }: Props) {
           {/* Phase label */}
           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
             ${phase === 'bid1' ? 'bg-purple-900/40 text-purple-300 border border-purple-700/50' :
+              phase === 'cardExchange' ? 'bg-amber-900/40 text-amber-300 border border-amber-700/50' :
               phase === 'bid2' ? 'bg-blue-900/40 text-blue-300 border border-blue-700/50' :
               phase === 'playing' ? 'bg-emerald-900/40 text-emerald-300 border border-emerald-700/50' :
               'bg-slate-800 text-slate-400 border border-slate-600'
             }`}>
             {phase === 'bid1' ? t('phase1Bid') :
+             phase === 'cardExchange' ? t('exchangeRoundLabel') :
              phase === 'bid2' ? t('phase2Bid') :
              phase === 'playing' ? t('phasePlay') :
              phase}
@@ -224,6 +257,7 @@ export default function GameBoard({ state, onError }: Props) {
                     maxTricks={totalTricks}
                     currentHighBid={currentHighBid1}
                     isMyTurn={isMyTurn}
+                    isDeclarerConfirm={state.awaitingDeclarerConfirm && isMyTurn}
                     onError={onError}
                   />
                 ) : (
@@ -337,7 +371,32 @@ export default function GameBoard({ state, onError }: Props) {
         )}
       </div>
 
+      {/* ── Turn reminder banner ── */}
+      {showTurnReminder && (
+        <div className="fixed top-4 left-1/2 z-50 flex items-center gap-3
+          bg-orange-500 text-white font-bold px-5 py-3 rounded-2xl shadow-2xl
+          border-2 border-orange-300 animate-urgent-pulse">
+          <span className="text-xl">⏰</span>
+          <span className="text-sm">{t('turnReminderMsg')}</span>
+          <button
+            className="ml-2 text-orange-200 hover:text-white text-xs underline"
+            onClick={() => setShowTurnReminder(false)}
+          >
+            {t('turnReminderDismiss')}
+          </button>
+        </div>
+      )}
+
       {/* ── Modals ── */}
+      {phase === 'cardExchange' && !state.isSpectator && (
+        <CardExchange
+          state={state}
+          selectedIndices={exchangeSelected}
+          onToggle={handleExchangeToggle}
+          onSubmit={handleExchangeSubmit}
+          onError={onError}
+        />
+      )}
       {phase === 'handEnd' && (
         <HandSummary state={state} onError={onError} />
       )}

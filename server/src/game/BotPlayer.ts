@@ -60,8 +60,22 @@ function estimateTricks(hand: Card[], trump: Suit | null): number {
   return Math.min(total, hand.length);
 }
 
+// ── Card exchange decision ────────────────────────────────────────────────────
+export function chooseExchangeCards(game: WhistGame, botId: string): number[] {
+  const player = game.players.find(p => p.id === botId)!;
+  // Pass the 3 lowest-value cards
+  return player.hand
+    .map((card, i) => ({ i, val: RANK_VALUE[card.rank] }))
+    .sort((a, b) => a.val - b.val)
+    .slice(0, 3)
+    .map(x => x.i);
+}
+
 // ── Phase-1 bid decision ─────────────────────────────────────────────────────
 export function chooseBid1(game: WhistGame, botId: string): Bid1Action {
+  // When the bot won Phase 1 and is asked to confirm or raise, always confirm
+  if (game.awaitingDeclarerConfirm) return { type: 'pass' };
+
   const player = game.players.find(p => p.id === botId)!;
   const hand = player.hand;
   const minTricks = game.maxPlayers === 4 ? 5 : 6;

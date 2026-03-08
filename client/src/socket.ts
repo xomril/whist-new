@@ -39,6 +39,10 @@ export interface ClientToServerEvents {
   nextHand: (
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
+  submitExchange: (
+    data: { cardIndices: number[] },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
 }
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({

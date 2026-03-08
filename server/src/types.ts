@@ -51,12 +51,13 @@ export interface HandRecord {
 
 // ── Game phase ───────────────────────────────────────────────────────────────
 export type GamePhase =
-  | 'waiting'   // lobby / not started
-  | 'bid1'      // phase-1 bidding: choose trump + trick count
-  | 'bid2'      // phase-2 bidding: each player bids how many tricks
-  | 'playing'   // playing tricks
-  | 'handEnd'   // hand finished, review scores
-  | 'gameOver'; // game finished
+  | 'waiting'      // lobby / not started
+  | 'bid1'         // phase-1 bidding: choose trump + trick count
+  | 'cardExchange' // all-pass exchange: players select 3 cards to pass
+  | 'bid2'         // phase-2 bidding: each player bids how many tricks
+  | 'playing'      // playing tricks
+  | 'handEnd'      // hand finished, review scores
+  | 'gameOver';    // game finished
 
 // ── Per-player view sent to client ──────────────────────────────────────────
 export interface PlayerView {
@@ -87,6 +88,8 @@ export interface GameStateView {
   declarerIndex?: number;
   trumpSuit?: TrumpSuit;
   currentHighBid1?: Bid1;
+  /** True when the Phase-1 winner is deciding whether to raise or confirm */
+  awaitingDeclarerConfirm?: boolean;
   currentTrick: TrickCard[];
   completedTricks: CompletedTrick[];
   trickNumber: number;
@@ -100,6 +103,10 @@ export interface GameStateView {
   targetScore: number;
   validCardIndices?: number[];
   handHistory: HandRecord[];
+  // card-exchange phase
+  exchangeRound?: number;    // 1 = right, 2 = opposite, 3 = left
+  exchangeSubmitted?: boolean;
+  exchangePendingCount?: number;
 }
 
 // ── Room info sent to lobby ──────────────────────────────────────────────────
@@ -149,4 +156,8 @@ export interface ClientToServerEvents {
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   nextHand: (callback: (result: { success: boolean; error?: string }) => void) => void;
+  submitExchange: (
+    data: { cardIndices: number[] },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
 }

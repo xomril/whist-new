@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Deploy Vibe-Code to Oracle Cloud</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" />
+<style>
+  :root {
+    --accent: #f97316;
+    --accent2: #38bdf8;
+    --green: #4ade80;
+    --red: #f87171;
+    --muted: #94a3b8;
+  }
+  .reveal { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .reveal h1, .reveal h2, .reveal h3 { text-transform: none; letter-spacing: -0.02em; }
+  .reveal h1 { font-size: 2.2em; }
+  .reveal h2 { font-size: 1.5em; color: var(--accent2); margin-bottom: 0.6em; }
+  .reveal h3 { font-size: 1.1em; color: var(--accent); }
+  .reveal pre { box-shadow: 0 0 0 1px #334155; border-radius: 8px; width: 100%; }
+  .reveal pre code { font-size: 0.72em; line-height: 1.5; max-height: 420px; border-radius: 8px; }
+  .reveal code { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+  .reveal p, .reveal li { line-height: 1.6; }
+  .reveal ul { margin: 0; }
+  .reveal section { text-align: left; }
+  .reveal section.center-slide { text-align: center; }
+
+  /* tag chips */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.6em;
+    font-weight: 600;
+    vertical-align: middle;
+    margin-inline: 4px;
+  }
+  .tag-free { background: #14532d; color: #86efac; border: 1px solid #166534; }
+  .tag-gotcha { background: #7c2d12; color: #fdba74; border: 1px solid #9a3412; }
+  .tag-opt { background: #1e3a5f; color: #93c5fd; border: 1px solid #1e40af; }
+
+  /* two-column helper */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; align-items: start; }
+  .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; }
+
+  /* step boxes */
+  .step-box {
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 0.8em 1em;
+    background: #0f172a;
+    font-size: 0.8em;
+  }
+  .step-box h3 { margin: 0 0 0.4em; font-size: 1em; }
+  .step-box ul { margin: 0; padding-inline-start: 1.2em; }
+
+  /* big number */
+  .big-num {
+    font-size: 3em;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  /* checklist */
+  .check li::marker { content: '✓  '; color: var(--green); }
+  .cross li::marker { content: '✗  '; color: var(--red); }
+
+  /* progress dots override */
+  .reveal .progress { color: var(--accent); }
+
+  .note {
+    background: #1e293b;
+    border-left: 3px solid var(--accent);
+    padding: 0.5em 1em;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75em;
+    color: var(--muted);
+    margin-top: 0.8em;
+  }
+
+  .big-icon { font-size: 3em; line-height: 1; margin-bottom: 0.2em; }
+  .subtitle { color: var(--muted); font-size: 0.9em; margin-top: 0.3em; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ─────────────────────────────────────────────────────── TITLE -->
+<section class="center-slide" data-background-gradient="radial-gradient(ellipse at 60% 40%, #1e3a5f 0%, #0f172a 70%)">
+  <div class="big-icon">🚀</div>
+  <h1>Deploy Vibe-Code<br>to <span style="color:var(--accent)">Production</span></h1>
+  <p class="subtitle">Oracle Cloud Free Tier · Node.js · Nginx · SSL · Auto-Deploy</p>
+  <p style="margin-top:1.5em; font-size:0.65em; color:#475569">Navigate with arrow keys &nbsp;·&nbsp; Press <kbd style="background:#1e293b;padding:1px 6px;border-radius:4px;border:1px solid #475569">F</kbd> for fullscreen</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── WHAT WE COVER -->
+<section>
+  <h2>What you'll have at the end</h2>
+  <div class="cols-3" style="margin-top:0.5em">
+    <div class="step-box">
+      <h3>🖥️ Server</h3>
+      <ul>
+        <li>Oracle Cloud VM</li>
+        <li>Always-on with PM2</li>
+        <li>Nginx reverse proxy</li>
+      </ul>
+    </div>
+    <div class="step-box">
+      <h3>🔒 HTTPS</h3>
+      <ul>
+        <li>Custom domain</li>
+        <li>Free SSL cert</li>
+        <li>Auto-renews</li>
+      </ul>
+    </div>
+    <div class="step-box">
+      <h3>⚡ CI/CD</h3>
+      <ul>
+        <li>Push to GitHub</li>
+        <li>Auto-deploys</li>
+        <li>Zero downtime</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:1.2em">Total cost: <strong style="color:var(--green)">$0/month</strong> — Oracle Free Tier is genuinely free forever (4 ARM cores + 24 GB RAM)</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── PREREQUISITES -->
+<section>
+  <h2>What you need before starting</h2>
+  <ul class="check" style="font-size:0.85em; line-height:2">
+    <li>Your app repo on <strong>GitHub</strong></li>
+    <li>A <strong>domain name</strong> <span class="tag tag-opt">optional but recommended</span></li>
+    <li>An Oracle Cloud account — <a href="https://cloud.oracle.com" style="color:var(--accent2)">cloud.oracle.com</a></li>
+    <li>Your local machine has <code>ssh-keygen</code> (already on Mac/Linux)</li>
+  </ul>
+  <div class="note">Your app must have a <code>build</code> script and a <code>start</code> script in <code>package.json</code> (or equivalent for your stack)</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── ORACLE SETUP -->
+<section>
+  <h2>1 · Create the Oracle Cloud VM <span class="tag tag-free">Free</span></h2>
+  <p style="font-size:0.8em">After signing up, go to <strong>Compute → Instances → Create Instance</strong></p>
+  <div class="cols" style="font-size:0.8em; margin-top:0.6em">
+    <div>
+      <h3>Settings to change</h3>
+      <ul style="line-height:2">
+        <li>Image: <strong>Oracle Linux 9</strong></li>
+        <li>Shape: <strong>VM.Standard.A1.Flex</strong></li>
+        <li>OCPUs: <strong>2</strong> &nbsp; RAM: <strong>12 GB</strong></li>
+        <li>Upload your <strong>SSH public key</strong></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Generate SSH key (if needed)</h3>
+      <pre><code class="language-bash">ssh-keygen -t ed25519 -C "oracle"
+# paste ~/.ssh/id_ed25519.pub into Oracle</code></pre>
+      <div class="note" style="margin-top:0.5em">Keep everything else default. All Free Tier resources are under <em>Always Free Eligible</em></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── SSH -->
+<section>
+  <h2>2 · SSH into the server <span class="tag tag-gotcha">gotcha</span></h2>
+  <pre><code class="language-bash">ssh opc@YOUR_SERVER_IP</code></pre>
+  <div style="margin-top:1em; font-size:0.82em">
+    <div class="note" style="border-color:var(--red); margin-bottom:0.8em">
+      ⚠️ <strong>Oracle Linux uses <code>opc</code> — NOT <code>ubuntu</code> or <code>root</code></strong><br>
+      This trips up everyone the first time.
+    </div>
+    <h3>Find your IP</h3>
+    <p>Oracle Console → Compute → Instances → click your instance → <em>Public IP address</em></p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── INSTALL STACK -->
+<section>
+  <h2>3 · Install the stack</h2>
+  <pre><code class="language-bash"># Node.js via nvm (version manager — easiest way)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 20
+node -v   # should print v20.x
+
+# PM2 — keeps your app running + auto-starts on reboot
+npm install -g pm2
+
+# Nginx — serves as reverse proxy + handles SSL
+sudo dnf install -y nginx git
+sudo systemctl enable --now nginx</code></pre>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── CLONE & BUILD -->
+<section>
+  <h2>4 · Clone &amp; build your app</h2>
+  <pre><code class="language-bash">cd ~
+git clone https://github.com/YOU/YOUR-REPO.git myapp
+cd myapp
+
+# install deps + build
+npm install
+npm run build      # or whatever your build step is
+
+# start with PM2 (replace "npm start" with your start command)
+pm2 start "npm start" --name myapp
+
+# save so PM2 restarts on server reboot
+pm2 save
+pm2 startup        # run the printed command as sudo</code></pre>
+  <div class="note">PM2 keeps your process alive and restarts it automatically if it crashes</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── NGINX -->
+<section>
+  <h2>5 · Configure Nginx</h2>
+  <p style="font-size:0.8em">Create <code>/etc/nginx/conf.d/myapp.conf</code>:</p>
+  <pre><code class="language-nginx">server {
+    listen 80;
+    server_name yourdomain.com;   # or _ for any domain
+
+    location / {
+        proxy_pass         http://localhost:3000;  # your app's port
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";  # needed for WebSockets
+        proxy_set_header   Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}</code></pre>
+  <pre style="margin-top:0.5em"><code class="language-bash">sudo nginx -t          # test config — should say "ok"
+sudo systemctl reload nginx</code></pre>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── FIREWALL -->
+<section>
+  <h2>6 · Open the firewall <span class="tag tag-gotcha">two steps!</span></h2>
+  <p style="font-size:0.8em">Oracle has <strong>two independent firewalls</strong>. Both must allow port 80 &amp; 443.</p>
+  <div class="cols" style="font-size:0.78em; margin-top:0.5em">
+    <div>
+      <h3>① OS firewall (firewalld)</h3>
+      <pre><code class="language-bash">sudo firewall-cmd \
+  --permanent \
+  --add-service=http \
+  --add-service=https
+sudo firewall-cmd --reload</code></pre>
+    </div>
+    <div>
+      <h3>② Oracle Cloud Security List</h3>
+      <ul style="line-height:1.8">
+        <li>Networking → VCN → Security Lists</li>
+        <li>Add Ingress Rule: <br>
+            Source <code>0.0.0.0/0</code><br>
+            Port <code>80</code></li>
+        <li>Repeat for port <code>443</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">Forgetting the Oracle Cloud Security List is the #1 reason "it works locally but port 80 is unreachable"</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── SELINUX -->
+<section>
+  <h2>7 · Fix SELinux <span class="tag tag-gotcha">Oracle Linux specific</span></h2>
+  <p style="font-size:0.85em">By default SELinux blocks Nginx from proxying to your app. You'll get a <strong>502 Bad Gateway</strong>.</p>
+  <pre><code class="language-bash">sudo setsebool -P httpd_can_network_connect 1</code></pre>
+  <p style="font-size:0.82em; margin-top:1em">That's it. One line. The <code>-P</code> makes it persistent across reboots.</p>
+  <div class="note">This only applies to Oracle Linux / RHEL / CentOS — Ubuntu doesn't have SELinux enabled by default</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── TEST -->
+<section class="center-slide">
+  <div class="big-icon">🎉</div>
+  <h2>Your app is live!</h2>
+  <p style="font-size:0.9em">Visit <code style="color:var(--accent2)">http://YOUR_SERVER_IP</code> in a browser</p>
+  <br>
+  <p style="font-size:0.8em; color:var(--muted)">Next steps (optional but recommended):</p>
+  <ul style="font-size:0.8em; color:var(--muted); text-align:left; display:inline-block">
+    <li>Add a custom domain → DNS A record → your IP</li>
+    <li>Add free SSL with Let's Encrypt</li>
+    <li>Set up GitHub Actions auto-deploy</li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── DOMAIN -->
+<section>
+  <h2>8 · Add a custom domain <span class="tag tag-opt">optional</span></h2>
+  <p style="font-size:0.85em">At your DNS provider (Cloudflare, GoDaddy, etc.), add an <strong>A record</strong>:</p>
+  <div style="background:#0f172a; border:1px solid #334155; border-radius:8px; padding:0.8em 1.2em; font-family:monospace; font-size:0.8em; margin:0.6em 0">
+    <table style="border-collapse:collapse; width:100%">
+      <tr style="color:#64748b">
+        <th style="text-align:left;padding:4px 12px">Type</th>
+        <th style="text-align:left;padding:4px 12px">Name</th>
+        <th style="text-align:left;padding:4px 12px">Value</th>
+        <th style="text-align:left;padding:4px 12px">TTL</th>
+      </tr>
+      <tr style="color:#e2e8f0">
+        <td style="padding:6px 12px">A</td>
+        <td style="padding:6px 12px">myapp</td>
+        <td style="padding:6px 12px; color:var(--accent2)">YOUR_SERVER_IP</td>
+        <td style="padding:6px 12px">Auto</td>
+      </tr>
+    </table>
+  </div>
+  <p style="font-size:0.8em">DNS propagation takes <strong>1–30 minutes</strong>. Then update Nginx <code>server_name</code> to your domain and reload.</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── SSL -->
+<section>
+  <h2>9 · Free SSL with Let's Encrypt <span class="tag tag-opt">optional</span></h2>
+  <div class="note" style="margin-bottom:0.8em; border-color:var(--accent)">⚠️ Requires a domain pointing to your server first (step 8)</div>
+  <pre><code class="language-bash"># Install certbot (pip method works on Oracle Linux 9)
+sudo python3 -m pip install certbot certbot-nginx
+
+# Get & install certificate (replaces Nginx config automatically)
+sudo certbot --nginx -d yourdomain.com
+
+# Test auto-renewal
+sudo certbot renew --dry-run</code></pre>
+  <p style="font-size:0.8em; margin-top:0.8em">Certbot rewrites your Nginx config to redirect HTTP → HTTPS. Certs auto-renew every 90 days.</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── GITHUB ACTIONS -->
+<section>
+  <h2>10 · Auto-deploy with GitHub Actions</h2>
+  <p style="font-size:0.75em; color:var(--muted)">Create <code>.github/workflows/deploy.yml</code> in your repo:</p>
+  <pre><code class="language-yaml">name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: opc
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export NVM_DIR="$HOME/.nvm" && source "$NVM_DIR/nvm.sh"
+            cd ~/myapp
+            git pull
+            npm install
+            npm run build
+            pm2 restart myapp</code></pre>
+  <div class="note">Add <code>SERVER_IP</code> and <code>SSH_PRIVATE_KEY</code> in GitHub → Settings → Secrets and variables → Actions</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── SECRETS -->
+<section>
+  <h2>GitHub Secrets setup</h2>
+  <p style="font-size:0.85em">Settings → Secrets and variables → Actions → <strong>New repository secret</strong></p>
+  <div class="cols" style="font-size:0.82em; margin-top:0.8em; gap:1.5em">
+    <div>
+      <h3>SERVER_IP</h3>
+      <p style="color:var(--muted)">Your Oracle VM's public IP address</p>
+      <pre><code class="language-bash">129.159.x.x</code></pre>
+    </div>
+    <div>
+      <h3>SSH_PRIVATE_KEY</h3>
+      <p style="color:var(--muted)">Your private key (the whole file)</p>
+      <pre><code class="language-bash">cat ~/.ssh/id_ed25519
+# paste the ENTIRE output including
+# -----BEGIN ... KEY-----</code></pre>
+    </div>
+  </div>
+  <div class="note">Never commit private keys to your repo. GitHub Secrets are encrypted and only exposed to your workflows.</div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── FULL PICTURE -->
+<section>
+  <h2>The full picture</h2>
+  <div style="font-size:0.82em; text-align:center; line-height:2.2">
+    <span style="color:#94a3b8">You write code</span>
+    &nbsp;→&nbsp;
+    <span style="color:var(--accent2)">git push</span>
+    &nbsp;→&nbsp;
+    <span style="color:#a78bfa">GitHub Actions</span>
+    &nbsp;→&nbsp;
+    <span style="color:var(--accent)">SSH → build → restart</span>
+  </div>
+  <div style="text-align:center; font-size:2em; margin:0.5em 0">↓</div>
+  <div style="font-size:0.82em; text-align:center; line-height:2.2">
+    <span style="color:#64748b">Browser</span>
+    &nbsp;→&nbsp;
+    <span style="color:var(--green)">HTTPS (Let's Encrypt)</span>
+    &nbsp;→&nbsp;
+    <span style="color:var(--accent2)">Nginx</span>
+    &nbsp;→&nbsp;
+    <span style="color:var(--accent)">Node.js app (PM2)</span>
+  </div>
+
+  <div class="cols-3" style="margin-top:1em; font-size:0.72em; text-align:center">
+    <div class="step-box" style="text-align:center">
+      <div style="font-size:1.6em">🆓</div>
+      Oracle Free Tier<br><span style="color:var(--muted)">Always free</span>
+    </div>
+    <div class="step-box" style="text-align:center">
+      <div style="font-size:1.6em">🔒</div>
+      Let's Encrypt SSL<br><span style="color:var(--muted)">Free, auto-renews</span>
+    </div>
+    <div class="step-box" style="text-align:center">
+      <div style="font-size:1.6em">⚡</div>
+      GitHub Actions CI<br><span style="color:var(--muted)">Free for public repos</span>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── CHEATSHEET -->
+<section>
+  <h2>Quick-reference cheatsheet</h2>
+  <div style="font-size:0.72em; line-height:1.7">
+    <table style="width:100%; border-collapse:collapse">
+      <thead>
+        <tr style="color:#64748b; border-bottom:1px solid #334155">
+          <th style="text-align:left; padding:4px 8px">Problem</th>
+          <th style="text-align:left; padding:4px 8px">Fix</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:6px 8px; color:#fbbf24">SSH: Permission denied</td>
+          <td style="padding:6px 8px">Use <code>opc@IP</code>, not <code>ubuntu</code> or <code>root</code></td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:6px 8px; color:#fbbf24">502 Bad Gateway</td>
+          <td style="padding:6px 8px"><code>sudo setsebool -P httpd_can_network_connect 1</code></td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:6px 8px; color:#fbbf24">Port 80 unreachable</td>
+          <td style="padding:6px 8px">Add Ingress rule in Oracle Cloud Security List</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:6px 8px; color:#fbbf24">App stops on SSH exit</td>
+          <td style="padding:6px 8px"><code>pm2 start … &amp;&amp; pm2 save &amp;&amp; pm2 startup</code></td>
+        </tr>
+        <tr style="border-bottom:1px solid #1e293b">
+          <td style="padding:6px 8px; color:#fbbf24">Deploy script: exit 126</td>
+          <td style="padding:6px 8px">Use <code>bash deploy.sh</code> not <code>./deploy.sh</code></td>
+        </tr>
+        <tr>
+          <td style="padding:6px 8px; color:#fbbf24">Certbot can't find domain</td>
+          <td style="padding:6px 8px">Wait for DNS propagation, check with <code>dig yourdomain.com</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── END -->
+<section class="center-slide" data-background-gradient="radial-gradient(ellipse at 40% 60%, #14532d 0%, #0f172a 70%)">
+  <div class="big-icon">✅</div>
+  <h1 style="color:var(--green)">You're live.</h1>
+  <p class="subtitle" style="margin-top:0.5em">Push to main → auto-deploys → production in seconds</p>
+  <div style="margin-top:2em; font-size:0.7em; color:#475569">
+    Oracle Cloud Free Tier · Node.js 20 · PM2 · Nginx · Let's Encrypt · GitHub Actions
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  progress: true,
+  transition: 'slide',
+  transitionSpeed: 'fast',
+  plugins: [ RevealHighlight, RevealNotes ],
+  highlight: { highlightOnLoad: true },
+});
+</script>
+</body>
+</html>

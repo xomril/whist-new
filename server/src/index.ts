@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { RoomManager } from './RoomManager';
 import { ServerToClientEvents, ClientToServerEvents } from './types';
-import { chooseBid1, chooseBid2, chooseCard } from './game/BotPlayer';
+import { chooseBid1, chooseBid2, chooseCard, chooseExchangeCards } from './game/BotPlayer';
 
 const app = express();
 const httpServer = createServer(app);
@@ -50,6 +50,27 @@ function scheduleBotTurn(roomId: string) {
   const game = rooms.getGame(roomId);
   if (!game) return;
   if (game.phase === 'gameOver' || game.phase === 'waiting' || game.phase === 'handEnd') return;
+
+  // Card exchange: all bots act simultaneously (not sequential)
+  if (game.phase === 'cardExchange') {
+    const info = rooms.getRoomInfo(roomId);
+    for (const { id } of info?.players ?? []) {
+      if (!rooms.isBot(roomId, id)) continue;
+      if (game.exchangeSelections.has(id)) continue;
+      const botId = id;
+      const delay = 700 + Math.random() * 500;
+      setTimeout(() => {
+        const g = rooms.getGame(roomId);
+        if (!g || g.phase !== 'cardExchange' || g.exchangeSelections.has(botId)) return;
+        const result = g.submitExchange(botId, chooseExchangeCards(g, botId));
+        if (result.success) {
+          broadcastState(roomId);
+          scheduleBotTurn(roomId);
+        }
+      }, delay);
+    }
+    return;
+  }
 
   const currentId = game.players[game.currentPlayerIndex]?.id;
   if (!currentId || !rooms.isBot(roomId, currentId)) return;
@@ -169,6 +190,18 @@ io.on('connection', socket => {
     if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
 
     const result = game.playCard(socket.id, cardIndex);
+    cb(result);
+    if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Submit exchange ───────────────────────────────────────────────────────────
+  socket.on('submitExchange', ({ cardIndices }, cb) => {
+    const roomId = rooms.getRoomId(socket.id);
+    if (!roomId) { cb({ success: false, error: 'Not in a room' }); return; }
+    const game = rooms.getGame(roomId);
+    if (!game) { cb({ success: false, error: 'No game in progress' }); return; }
+
+    const result = game.submitExchange(socket.id, cardIndices);
     cb(result);
     if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
   });

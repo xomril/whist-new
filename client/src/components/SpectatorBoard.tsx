@@ -122,10 +122,11 @@ export default function SpectatorBoard({ state, onError }: Props) {
           <LangToggle />
           <span className={`px-2 py-0.5 rounded-full border text-xs font-semibold
             ${phase === 'bid1' ? 'bg-purple-900/40 text-purple-300 border-purple-700/50' :
+              phase === 'cardExchange' ? 'bg-amber-900/40 text-amber-300 border-amber-700/50' :
               phase === 'bid2' ? 'bg-blue-900/40 text-blue-300 border-blue-700/50' :
               phase === 'playing' ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' :
               'bg-slate-800 text-slate-400 border-slate-600'}`}>
-            {phase === 'bid1' ? t('phase1Bid') : phase === 'bid2' ? t('phase2Bid') : phase === 'playing' ? t('phasePlay') : phase}
+            {phase === 'bid1' ? t('phase1Bid') : phase === 'cardExchange' ? t('exchangeRoundLabel') : phase === 'bid2' ? t('phase2Bid') : phase === 'playing' ? t('phasePlay') : phase}
           </span>
           {phase === 'playing' && (
             <span className="text-slate-300">{t('sTurn', players[currentPlayerIndex]?.name ?? '')}</span>

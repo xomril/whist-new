@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bid1, TrumpSuit } from '../types';
 import { socket } from '../socket';
 import { useT } from '../i18n';
@@ -24,14 +24,34 @@ interface Props {
   maxTricks: number;
   currentHighBid?: Bid1;
   isMyTurn: boolean;
+  isDeclarerConfirm?: boolean;
   onError: (msg: string) => void;
 }
 
-export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTurn, onError }: Props) {
+export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTurn, isDeclarerConfirm, onError }: Props) {
   const { t, tTrump } = useT();
   const [selectedSuit, setSelectedSuit] = useState<TrumpSuit>('clubs');
   const [selectedTricks, setSelectedTricks] = useState(minTricks);
   const [loading, setLoading] = useState(false);
+
+  // When entering confirm mode, prime the selector one step above the current bid
+  useEffect(() => {
+    if (isDeclarerConfirm && currentHighBid) {
+      const SUITS: TrumpSuit[] = ['clubs', 'diamonds', 'hearts', 'spades', 'notrumps'];
+      const suitIdx = SUITS.indexOf(currentHighBid.suit);
+      if (suitIdx < SUITS.length - 1) {
+        setSelectedTricks(currentHighBid.tricks);
+        setSelectedSuit(SUITS[suitIdx + 1]);
+      } else {
+        setSelectedTricks(Math.min(currentHighBid.tricks + 1, maxTricks));
+        setSelectedSuit('clubs');
+      }
+    }
+  }, [isDeclarerConfirm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const effectiveMin = isDeclarerConfirm && currentHighBid
+    ? currentHighBid.tricks
+    : minTricks;
 
   const submit = () => {
     if (!isMyTurn) return;
@@ -53,18 +73,31 @@ export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTu
     });
   };
 
+  const waitingMsg = isDeclarerConfirm ? t('waitingDeclarerConfirm') : t('waitingBid');
+
   return (
-    <div className="bg-slate-900/95 rounded-2xl p-5 border border-slate-700 shadow-2xl w-full max-w-xs">
-      <h3 className="text-white font-bold text-center mb-1 text-base">{t('bid1Title')}</h3>
-      {currentHighBid ? (
-        <p className="text-center text-xs text-slate-400 mb-3">
-          {t('currentHighBid')}{' '}
-          <span className={`font-bold ${SUIT_COLOR[currentHighBid.suit]}`}>
-            {currentHighBid.tricks} {tTrump(currentHighBid.suit)}
-          </span>
-        </p>
+    <div className={`bg-slate-900/95 rounded-2xl p-5 border shadow-2xl w-full max-w-xs
+      ${isDeclarerConfirm ? 'border-yellow-500/60' : 'border-slate-700'}`}>
+
+      {isDeclarerConfirm ? (
+        <>
+          <h3 className="text-yellow-400 font-bold text-center mb-0.5 text-base">{t('declarerConfirmTitle')}</h3>
+          <p className="text-center text-xs text-slate-400 mb-3">{t('declarerConfirmHint')}</p>
+        </>
       ) : (
-        <p className="text-center text-xs text-slate-500 mb-3">{t('noBidsYet', minTricks)}</p>
+        <>
+          <h3 className="text-white font-bold text-center mb-1 text-base">{t('bid1Title')}</h3>
+          {currentHighBid ? (
+            <p className="text-center text-xs text-slate-400 mb-3">
+              {t('currentHighBid')}{' '}
+              <span className={`font-bold ${SUIT_COLOR[currentHighBid.suit]}`}>
+                {currentHighBid.tricks} {tTrump(currentHighBid.suit)}
+              </span>
+            </p>
+          ) : (
+            <p className="text-center text-xs text-slate-500 mb-3">{t('noBidsYet', minTricks)}</p>
+          )}
+        </>
       )}
 
       {isMyTurn ? (
@@ -87,7 +120,7 @@ export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTu
           <div className="flex items-center justify-center gap-3 mb-4">
             <button
               className="w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 font-bold text-lg text-white flex items-center justify-center transition-colors"
-              onClick={() => setSelectedTricks(t_ => Math.max(minTricks, t_ - 1))}
+              onClick={() => setSelectedTricks(t_ => Math.max(effectiveMin, t_ - 1))}
             >−</button>
             <span className="text-white font-bold text-2xl w-10 text-center">{selectedTricks}</span>
             <button
@@ -103,13 +136,20 @@ export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTu
             <button className="btn-primary flex-1 text-sm py-2" onClick={submit} disabled={loading}>
               {t('btnBid', selectedTricks, tTrump(selectedSuit))}
             </button>
-            <button className="btn-secondary text-sm py-2 px-4" onClick={pass} disabled={loading}>
-              {t('btnPass')}
+            <button
+              className={`text-sm py-2 px-4 rounded-lg border font-semibold transition-colors
+                ${isDeclarerConfirm
+                  ? 'bg-emerald-700 hover:bg-emerald-600 text-white border-emerald-500'
+                  : 'btn-secondary'}`}
+              onClick={pass}
+              disabled={loading}
+            >
+              {isDeclarerConfirm ? t('btnConfirmBid') : t('btnPass')}
             </button>
           </div>
         </>
       ) : (
-        <div className="text-center text-slate-400 py-4 animate-pulse text-sm">{t('waitingBid')}</div>
+        <div className="text-center text-slate-400 py-4 animate-pulse text-sm">{waitingMsg}</div>
       )}
     </div>
   );

@@ -37,6 +37,7 @@ export class WhistGame {
   bid1Passed = new Set<string>();
   currentHighBid1?: Bid1;
   currentHighBidderId?: string;
+  awaitingDeclarerConfirm = false;
 
   // phase-2 bidding
   bid2Order: string[] = [];
@@ -48,6 +49,10 @@ export class WhistGame {
 
   // hand history
   handHistory: HandRecord[] = [];
+
+  // card exchange (all-pass mechanic)
+  exchangeRound = 0;
+  exchangeSelections = new Map<string, Card[]>();
 
   // play
   currentTrick: TrickCard[] = [];
@@ -96,9 +101,12 @@ export class WhistGame {
     this.currentHighBid1 = undefined;
     this.currentHighBidderId = undefined;
     this.bid1Passed = new Set();
+    this.awaitingDeclarerConfirm = false;
     this.currentTrick = [];
     this.completedTricks = [];
     this.isOverGame = undefined;
+    this.exchangeRound = 0;
+    this.exchangeSelections = new Map();
 
     // Deal
     const deckSize = totalTricks(this.maxPlayers);
@@ -122,6 +130,25 @@ export class WhistGame {
     if (this.players[this.currentPlayerIndex].id !== playerId) return err('Not your turn');
 
     const player = this.players[this.currentPlayerIndex];
+
+    // Declarer won Phase 1 and is choosing to confirm or raise
+    if (this.awaitingDeclarerConfirm) {
+      if (action.type === 'pass') {
+        // Confirm current bid → proceed to Phase 2
+        this.awaitingDeclarerConfirm = false;
+        this.finalizeBid1();
+      } else {
+        if (compareBid(action.bid, this.currentHighBid1!) <= 0) {
+          return err('Raise must be strictly higher than your current winning bid');
+        }
+        this.awaitingDeclarerConfirm = false;
+        this.currentHighBid1 = action.bid;
+        this.currentHighBidderId = playerId;
+        player.bid1 = action;
+        this.finalizeBid1();
+      }
+      return { success: true };
+    }
 
     if (action.type === 'pass') {
       this.bid1Passed.add(playerId);
@@ -149,15 +176,20 @@ export class WhistGame {
     const n = this.maxPlayers;
     const activePlayers = this.players.filter(p => !this.bid1Passed.has(p.id));
 
-    // All passed first round – redeal
+    // All passed – either exchange or full redeal
     if (activePlayers.length === 0) {
-      this.startHand();
+      if (this.exchangeRound >= 3) {
+        this.startHand(); // all 3 exchanges exhausted → full redeal
+      } else {
+        this.startCardExchange();
+      }
       return;
     }
 
-    // Only one bidder left – they win
+    // Only one bidder left – they win; give them a chance to confirm or raise
     if (activePlayers.length === 1 && this.currentHighBid1) {
-      this.finalizeBid1();
+      this.awaitingDeclarerConfirm = true;
+      this.currentPlayerIndex = this.players.findIndex(p => p.id === activePlayers[0].id);
       return;
     }
 
@@ -167,9 +199,10 @@ export class WhistGame {
       next = (next + 1) % n;
     }
 
-    // If we've come back to the current high bidder – they win
+    // Bidding came back to the current high bidder – give them confirm/raise chance
     if (this.currentHighBid1 && this.players[next].id === this.currentHighBidderId) {
-      this.finalizeBid1();
+      this.awaitingDeclarerConfirm = true;
+      this.currentPlayerIndex = next;
       return;
     }
 
@@ -182,21 +215,76 @@ export class WhistGame {
     this.startBid2();
   }
 
+  // ── Card exchange (all-pass mechanic) ──────────────────────────────────────
+  private startCardExchange(): void {
+    this.exchangeRound++;
+    this.exchangeSelections = new Map();
+    this.phase = 'cardExchange';
+  }
+
+  submitExchange(playerId: string, cardIndices: number[]): { success: boolean; error?: string } {
+    if (this.phase !== 'cardExchange') return err('Not in exchange phase');
+    if (cardIndices.length !== 3) return err('Must select exactly 3 cards');
+    if (new Set(cardIndices).size !== 3) return err('Duplicate card indices');
+
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) return err('Player not found');
+    if (this.exchangeSelections.has(playerId)) return err('Already submitted exchange');
+
+    for (const idx of cardIndices) {
+      if (idx < 0 || idx >= player.hand.length) return err('Invalid card index');
+    }
+
+    // Remove selected cards from hand (descending order preserves other indices)
+    const sortedDesc = [...cardIndices].sort((a, b) => b - a);
+    const cards: Card[] = [];
+    for (const idx of sortedDesc) {
+      cards.unshift(player.hand.splice(idx, 1)[0]);
+    }
+    this.exchangeSelections.set(playerId, cards);
+
+    if (this.exchangeSelections.size >= this.maxPlayers) {
+      this.executeExchange();
+    }
+    return { success: true };
+  }
+
+  private executeExchange(): void {
+    const n = this.maxPlayers;
+    // Round 1 → right (+1), Round 2 → opposite (+2), Round 3 → left (+n−1)
+    const offset = this.exchangeRound === 1 ? 1 : this.exchangeRound === 2 ? 2 : n - 1;
+
+    for (let i = 0; i < n; i++) {
+      const cards = this.exchangeSelections.get(this.players[i].id)!;
+      const targetIdx = (i + offset) % n;
+      this.players[targetIdx].hand.push(...cards);
+    }
+    this.exchangeSelections = new Map();
+
+    // Reset bid1 state for a fresh bidding round on the same hands
+    for (const p of this.players) p.bid1 = undefined;
+    this.bid1Passed = new Set();
+    this.currentHighBid1 = undefined;
+    this.currentHighBidderId = undefined;
+    this.awaitingDeclarerConfirm = false;
+    this.phase = 'bid1';
+    this.currentPlayerIndex = (this.dealerIndex + 1) % n;
+  }
+
   // ── Phase-2 bidding ────────────────────────────────────────────────────────
   private startBid2(): void {
     this.phase = 'bid2';
     const n = this.maxPlayers;
-    const declarerId = this.players[this.declarerIndex!].id;
 
-    // Order: declarer+1, declarer+2, … declarer (declarer always last)
+    // Order: declarer first, then clockwise; the last player cannot make total = totalTricks
     const order: string[] = [];
-    for (let i = 1; i <= n; i++) {
+    for (let i = 0; i < n; i++) {
       order.push(this.players[(this.declarerIndex! + i) % n].id);
     }
 
     this.bid2Order = order;
     this.bid2Cursor = 0;
-    this.currentPlayerIndex = this.players.findIndex(p => p.id === order[0]);
+    this.currentPlayerIndex = this.declarerIndex!;
   }
 
   /** The trick-count value the LAST phase-2 bidder is FORBIDDEN from bidding */
@@ -298,6 +386,7 @@ export class WhistGame {
     });
 
     this.currentTrick = [];
+    // Winner of the trick leads the next one
     this.trickLeaderIndex = this.players.findIndex(p => p.id === winnerId);
 
     if (player.hand.length === 0) {
@@ -374,6 +463,7 @@ export class WhistGame {
       declarerIndex: this.declarerIndex,
       trumpSuit: this.trumpSuit,
       currentHighBid1: this.currentHighBid1,
+      awaitingDeclarerConfirm: this.awaitingDeclarerConfirm || undefined,
       currentTrick: this.currentTrick,
       completedTricks: this.completedTricks,
       trickNumber: this.completedTricks.length + 1,
@@ -385,6 +475,8 @@ export class WhistGame {
       winner,
       targetScore: this.targetScore,
       handHistory: this.handHistory,
+      exchangeRound: this.phase === 'cardExchange' ? this.exchangeRound : undefined,
+      exchangePendingCount: this.phase === 'cardExchange' ? this.maxPlayers - this.exchangeSelections.size : undefined,
     };
   }
 
@@ -422,6 +514,7 @@ export class WhistGame {
       declarerIndex: this.declarerIndex,
       trumpSuit: this.trumpSuit,
       currentHighBid1: this.currentHighBid1,
+      awaitingDeclarerConfirm: this.awaitingDeclarerConfirm || undefined,
       currentTrick: this.currentTrick,
       completedTricks: this.completedTricks,
       trickNumber: this.completedTricks.length + 1,
@@ -437,6 +530,9 @@ export class WhistGame {
         this.phase === 'playing' && this.players[this.currentPlayerIndex]?.id === playerId
           ? this.validCardIndices(playerId)
           : undefined,
+      exchangeRound: this.phase === 'cardExchange' ? this.exchangeRound : undefined,
+      exchangeSubmitted: this.phase === 'cardExchange' ? this.exchangeSelections.has(playerId) : undefined,
+      exchangePendingCount: this.phase === 'cardExchange' ? this.maxPlayers - this.exchangeSelections.size : undefined,
     };
   }
 }
