@@ -2,10 +2,12 @@
  * Israeli Whist scoring:
  *
  * Zero-bid success:
- *   - Over game  (sum of bids > totalTricks): +25 pts
- *   - Under game (sum of bids < totalTricks): +50 pts
+ *   - UP game   (sum of bids > totalTricks): +30 pts
+ *   - DOWN game (sum of bids < totalTricks): +50 pts
  *
- * Zero-bid failure (took ≥ 1 trick): -25 - 5 × taken
+ * Zero-bid failure (took ≥ 1):
+ *   - UP game:   -30 + 10 × (taken - 1)
+ *   - DOWN game: -50 + 10 × (taken - 1)
  *
  * Non-zero bid:
  *   - Exact match: +10 + bid²
@@ -17,8 +19,9 @@ export function calcScore(
   isOverGame: boolean
 ): number {
   if (bid === 0) {
-    if (taken === 0) return isOverGame ? 25 : 50;
-    return -25 - 5 * taken;
+    if (taken === 0) return isOverGame ? 30 : 50;
+    const base = isOverGame ? -30 : -50;
+    return base + 10 * (taken - 1);
   }
   if (bid === taken) return 10 + bid * bid;
   return -10 * Math.abs(bid - taken);

@@ -36,7 +36,7 @@ const T = {
     rule4Label: 'Wrong bid:',
     rule4: '-10 × difference',
     rule5Label: 'Zero bid success:',
-    rule5: '+50 (down) / +25 (up)',
+    rule5: '+50 (down) / +30 (up); fail: -50/-30 +10 per extra trick',
     // WaitingRoom
     waitingRoom: 'Waiting Room',
     playersStatus: '{0}/{1} players joined',
