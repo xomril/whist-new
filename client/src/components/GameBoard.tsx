@@ -72,6 +72,7 @@ export default function GameBoard({ state, onError }: Props) {
   const [exchangeSelected, setExchangeSelected] = useState<number[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showLastTrick, setShowLastTrick] = useState(false);
   const [showTurnReminder, setShowTurnReminder] = useState(false);
 
   const {
@@ -211,6 +212,14 @@ export default function GameBoard({ state, onError }: Props) {
              phase}
           </span>
           <LangToggle />
+          {lastTrick && (
+            <button
+              className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
+              onClick={() => setShowLastTrick(s => !s)}
+            >
+              {t('lastTrickBtn')}
+            </button>
+          )}
           <button
             className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
             onClick={() => setShowHistory(true)}
@@ -381,6 +390,39 @@ export default function GameBoard({ state, onError }: Props) {
             </div>
           )}
         </div>
+
+        {/* ── Last trick overlay ── */}
+        {showLastTrick && lastTrick && (
+          <div className="absolute top-0 left-0 z-30 p-2" onClick={() => setShowLastTrick(false)}>
+            <div className="bg-slate-900/95 border border-slate-600 rounded-xl p-4 shadow-2xl min-w-[200px]" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">{t('lastTrickBtn')}</span>
+                <button className="text-slate-500 hover:text-white text-xs" onClick={() => setShowLastTrick(false)}>✕</button>
+              </div>
+              <div className="bg-yellow-500/20 text-yellow-300 text-xs font-bold px-3 py-1 rounded-full text-center mb-3">
+                {t('wonTrick', lastTrick.winnerName)}
+              </div>
+              <div className="flex flex-wrap gap-3 justify-center">
+                {lastTrick.cards.map((tc, i) => {
+                  const isWinner = tc.playerId === lastTrick.winnerId;
+                  return (
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <CardComponent
+                        card={tc.card}
+                        small
+                        className={isWinner ? 'ring-2 ring-yellow-400' : ''}
+                      />
+                      <span className={`text-xs font-semibold truncate max-w-[64px] text-center px-1.5 py-0.5 rounded-full
+                        ${isWinner ? 'bg-yellow-500/20 text-yellow-300' : 'text-slate-400'}`}>
+                        {tc.playerName}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Scoreboard overlay ── */}
         {showScoreboard && (

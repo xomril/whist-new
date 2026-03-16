@@ -114,6 +114,7 @@ const T = {
     trump_notrumps: 'No Trumps',
     // History modal
     historyBtn: 'History',
+    lastTrickBtn: 'Last Trick',
     historyTitle: 'Round History',
     historyHand: 'Hand',
     historyTrump: 'Trump',
@@ -253,6 +254,7 @@ const T = {
     trump_notrumps: 'ללא שליט',
     // History modal
     historyBtn: 'היסטוריה',
+    lastTrickBtn: 'תרגיל אחרון',
     historyTitle: 'היסטוריית סיבובים',
     historyHand: 'יד',
     historyTrump: 'שליט',
