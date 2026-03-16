@@ -36,7 +36,7 @@ const T = {
     rule4Label: 'Wrong bid:',
     rule4: '-10 × difference',
     rule5Label: 'Zero bid success:',
-    rule5: '+50 (under) / +25 (over)',
+    rule5: '+50 (down) / +25 (up)',
     // WaitingRoom
     waitingRoom: 'Waiting Room',
     playersStatus: '{0}/{1} players joined',
@@ -50,8 +50,8 @@ const T = {
     // GameBoard top bar
     handOf: 'Hand {0} / {1}',
     trump: 'Trump: {0}',
-    over: 'Over',
-    under: 'Under',
+    over: 'UP',
+    under: 'DOWN',
     trick: 'Trick {0}/{1}',
     // BidPhase1
     bid1Title: 'Phase 1 · Choose Trump',
@@ -88,8 +88,8 @@ const T = {
     waitingDeal: 'Waiting for a player to deal next hand…',
     bidLabel: 'bid',
     tookLabel: 'took',
-    overGame: 'Over game',
-    underGame: 'Under game',
+    overGame: 'UP game',
+    underGame: 'DOWN game',
     // GameOver
     youWin: 'You Win!',
     xWins: '{0} Wins!',
@@ -124,8 +124,8 @@ const T = {
     historyTook: 'Took',
     historyDelta: '±',
     historyTotal: 'Total',
-    historyOver: 'Over',
-    historyUnder: 'Under',
+    historyOver: 'UP',
+    historyUnder: 'DOWN',
     historyClose: 'Close',
     // Turn reminder
     turnReminderMsg: "It's your turn — don't forget to play!",
@@ -190,8 +190,8 @@ const T = {
     // GameBoard top bar
     handOf: 'יד {0} / {1}',
     trump: 'שליט: {0}',
-    over: 'מעל',
-    under: 'מתחת',
+    over: 'UP',
+    under: 'DOWN',
     trick: 'לקיחה {0}/{1}',
     // BidPhase1
     bid1Title: 'שלב 1 · בחר שליט',
@@ -228,8 +228,8 @@ const T = {
     waitingDeal: 'ממתין לחלוקת יד הבאה...',
     bidLabel: 'הציע',
     tookLabel: 'לקח',
-    overGame: 'משחק מעל',
-    underGame: 'משחק מתחת',
+    overGame: 'משחק UP',
+    underGame: 'משחק DOWN',
     // GameOver
     youWin: 'ניצחת!',
     xWins: '{0} ניצח!',
@@ -264,8 +264,8 @@ const T = {
     historyTook: 'לקח',
     historyDelta: '±',
     historyTotal: 'סה"כ',
-    historyOver: 'מעל',
-    historyUnder: 'מתחת',
+    historyOver: 'UP',
+    historyUnder: 'DOWN',
     historyClose: 'סגור',
     // Turn reminder
     turnReminderMsg: 'תורך — אל תשכח לשחק!',
