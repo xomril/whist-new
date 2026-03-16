@@ -36,7 +36,7 @@ export default function HistoryModal({ history, players, onClose }: Props) {
             <p className="text-slate-400 text-center py-8 text-sm">No completed hands yet.</p>
           )}
 
-          {history.map(hand => (
+          {[...history].reverse().map(hand => (
             <div key={hand.handNumber} className="bg-slate-800/60 rounded-xl border border-slate-700 overflow-hidden">
               {/* Hand header */}
               <div className="flex items-center gap-3 px-4 py-2 bg-slate-800 border-b border-slate-700">
