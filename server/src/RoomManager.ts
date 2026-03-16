@@ -155,6 +155,22 @@ export class RoomManager {
     return this.rooms.get(roomId)?.spectatorIds.has(socketId) ?? false;
   }
 
+  // ── Kick ───────────────────────────────────────────────────────────────────
+  removePlayer(roomId: string, hostId: string, targetId: string): { success: boolean; error?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== hostId) return { success: false, error: 'Only the host can kick players' };
+    if (room.game) return { success: false, error: 'Cannot kick during a game' };
+    if (targetId === hostId) return { success: false, error: 'Cannot kick yourself' };
+    if (!room.playerIds.includes(targetId)) return { success: false, error: 'Player not in room' };
+
+    room.playerIds = room.playerIds.filter(id => id !== targetId);
+    room.playerNames.delete(targetId);
+    room.botIds.delete(targetId);
+    this.playerRoom.delete(targetId);
+    return { success: true };
+  }
+
   // ── Disconnect / reconnect ─────────────────────────────────────────────────
   disconnect(playerId: string): void {
     const roomId = this.playerRoom.get(playerId);

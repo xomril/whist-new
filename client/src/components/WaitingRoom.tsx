@@ -51,6 +51,7 @@ export default function WaitingRoom({ room, onError }: Props) {
         <div className="space-y-2 mb-6">
           {room.players.map((p, i) => {
             const isBot = p.name.startsWith('🤖');
+            const canKick = isHost && p.id !== socket.id;
             return (
               <div key={p.id} className={`flex items-center gap-3 rounded-lg px-4 py-3 border
                 ${isBot ? 'bg-blue-900/20 border-blue-700/50' : 'bg-slate-800 border-slate-700'}`}>
@@ -59,7 +60,7 @@ export default function WaitingRoom({ room, onError }: Props) {
                   {isBot ? '🤖' : p.name[0]?.toUpperCase()}
                 </div>
                 <span className="text-white font-medium flex-1">{p.name}</span>
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 items-center">
                   {i === 0 && (
                     <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full font-medium">
                       {t('tagHost')}
@@ -69,6 +70,18 @@ export default function WaitingRoom({ room, onError }: Props) {
                     <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-medium">
                       {t('tagBot')}
                     </span>
+                  )}
+                  {canKick && (
+                    <button
+                      className="text-xs bg-red-900/40 hover:bg-red-700/60 text-red-400 hover:text-white px-2 py-0.5 rounded-full border border-red-700/50 transition-colors font-medium"
+                      onClick={() => {
+                        socket.emit('kickPlayer', { roomId: room.id, targetId: p.id }, res => {
+                          if (!res.success) onError(res.error ?? 'Failed to kick player');
+                        });
+                      }}
+                    >
+                      ✕
+                    </button>
                   )}
                 </div>
               </div>

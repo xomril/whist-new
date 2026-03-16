@@ -218,6 +218,16 @@ io.on('connection', socket => {
     if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
   });
 
+  // ── Kick player ──────────────────────────────────────────────────────────────
+  socket.on('kickPlayer', ({ roomId, targetId }, cb) => {
+    const result = rooms.removePlayer(roomId, socket.id, targetId);
+    if (!result.success) { cb(result); return; }
+
+    cb({ success: true });
+    io.to(targetId).emit('kicked', { reason: 'You were removed from the room by the host' });
+    io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
+  });
+
   // ── Disconnect ───────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const roomId = rooms.getRoomId(socket.id);

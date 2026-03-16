@@ -124,6 +124,7 @@ export interface ServerToClientEvents {
   roomUpdated: (data: { room: RoomInfo }) => void;
   gameState: (state: GameStateView) => void;
   error: (data: { message: string }) => void;
+  kicked: (data: { reason: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -158,6 +159,10 @@ export interface ClientToServerEvents {
   nextHand: (callback: (result: { success: boolean; error?: string }) => void) => void;
   submitExchange: (
     data: { cardIndices: number[] },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+  kickPlayer: (
+    data: { roomId: string; targetId: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
 }

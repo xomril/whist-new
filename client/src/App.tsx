@@ -74,10 +74,18 @@ function AppInner() {
 
     socket.on('error', ({ message }) => showToast(message));
 
+    socket.on('kicked', ({ reason }) => {
+      setView('lobby');
+      setRoom(null);
+      setGameState(null);
+      showToast(reason);
+    });
+
     return () => {
       socket.off('roomUpdated');
       socket.off('gameState');
       socket.off('error');
+      socket.off('kicked');
     };
   }, []);
 
