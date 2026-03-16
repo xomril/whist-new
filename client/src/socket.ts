@@ -52,6 +52,10 @@ export interface ClientToServerEvents {
     data: { roomId: string; targetId: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
+  toggleCheatMode: (
+    data: { roomId: string },
+    callback: (result: { success: boolean; error?: string; cheatMode?: boolean }) => void
+  ) => void;
 }
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({

@@ -39,6 +39,7 @@ function broadcastState(roomId: string) {
     if (!rooms.isBot(roomId, id)) {
       const state = game.stateFor(id);
       state.hostId = info?.hostId;
+      state.cheatMode = rooms.isCheatMode(roomId);
       io.to(id).emit('gameState', state);
     }
   }
@@ -225,6 +226,14 @@ io.on('connection', socket => {
     const result = game.nextHand();
     cb(result);
     if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Cheat mode ───────────────────────────────────────────────────────────────
+  socket.on('toggleCheatMode', ({ roomId }, cb) => {
+    const result = rooms.toggleCheatMode(roomId, socket.id);
+    if (!result.success) { cb(result); return; }
+    cb(result);
+    broadcastState(roomId);
   });
 
   // ── Kick from game ───────────────────────────────────────────────────────────

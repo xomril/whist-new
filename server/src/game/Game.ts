@@ -102,6 +102,9 @@ export class WhistGame {
     }
   }
 
+  /** When set, this player receives A K Q J of ♠ and ♥ + random fill on every deal. */
+  cheatPlayerId?: string;
+
   // ── Game lifecycle ─────────────────────────────────────────────────────────
   startGame(): void {
     this.handNumber = 0;
@@ -133,9 +136,30 @@ export class WhistGame {
 
     // Deal
     const deckSize = totalTricks(this.maxPlayers);
-    const deck = shuffle(createDeck(this.maxPlayers));
-    for (let i = 0; i < this.maxPlayers; i++) {
-      this.players[i].hand = deck.slice(i * deckSize, (i + 1) * deckSize);
+    const fullDeck = shuffle(createDeck(this.maxPlayers));
+    const cheatIdx = this.cheatPlayerId
+      ? this.players.findIndex(p => p.id === this.cheatPlayerId)
+      : -1;
+
+    if (cheatIdx !== -1) {
+      const cheatCards: Card[] = [
+        { rank: 'A', suit: 'spades' }, { rank: 'K', suit: 'spades' },
+        { rank: 'Q', suit: 'spades' }, { rank: 'J', suit: 'spades' },
+        { rank: 'A', suit: 'hearts' }, { rank: 'K', suit: 'hearts' },
+        { rank: 'Q', suit: 'hearts' }, { rank: 'J', suit: 'hearts' },
+      ].filter(cc => fullDeck.some(c => c.rank === cc.rank && c.suit === cc.suit));
+      const rest = shuffle(fullDeck.filter(c => !cheatCards.some(cc => cc.rank === c.rank && cc.suit === c.suit)));
+      this.players[cheatIdx].hand = [...cheatCards, ...rest.splice(0, deckSize - cheatCards.length)];
+      let restOffset = 0;
+      for (let i = 0; i < this.maxPlayers; i++) {
+        if (i === cheatIdx) continue;
+        this.players[i].hand = rest.splice(0, deckSize);
+      }
+      void restOffset;
+    } else {
+      for (let i = 0; i < this.maxPlayers; i++) {
+        this.players[i].hand = fullDeck.slice(i * deckSize, (i + 1) * deckSize);
+      }
     }
 
     // Phase-1 starts from player left of dealer

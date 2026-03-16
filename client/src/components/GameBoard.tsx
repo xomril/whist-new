@@ -212,6 +212,18 @@ export default function GameBoard({ state, onError }: Props) {
              phase}
           </span>
           <LangToggle />
+          {isHost && (
+            <button
+              className={`px-2 py-0.5 rounded border text-xs font-semibold transition-colors
+                ${state.cheatMode
+                  ? 'bg-yellow-500/30 border-yellow-500/60 text-yellow-300 hover:bg-yellow-500/20'
+                  : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+              title="Debug mode: you get A K Q J of ♠♥ every hand"
+              onClick={() => socket.emit('toggleCheatMode', { roomId: state.roomId }, () => {})}
+            >
+              {state.cheatMode ? '🃏 Debug ON' : '🃏 Debug'}
+            </button>
+          )}
           {lastTrick && (
             <button
               className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"

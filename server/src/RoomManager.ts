@@ -172,6 +172,21 @@ export class RoomManager {
     return this.rooms.get(roomId)?.spectatorIds.has(socketId) ?? false;
   }
 
+  // ── Cheat mode ─────────────────────────────────────────────────────────────
+  toggleCheatMode(roomId: string, hostId: string): { success: boolean; error?: string; cheatMode?: boolean } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== hostId) return { success: false, error: 'Only the host can toggle cheat mode' };
+
+    const newVal = !(room.game?.cheatPlayerId);
+    if (room.game) room.game.cheatPlayerId = newVal ? hostId : undefined;
+    return { success: true, cheatMode: newVal };
+  }
+
+  isCheatMode(roomId: string): boolean {
+    return !!(this.rooms.get(roomId)?.game?.cheatPlayerId);
+  }
+
   // ── Kick ───────────────────────────────────────────────────────────────────
   kickFromGame(roomId: string, hostId: string, targetId: string): { success: boolean; error?: string } {
     const room = this.rooms.get(roomId);

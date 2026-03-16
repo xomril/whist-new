@@ -102,6 +102,7 @@ export interface GameStateView {
   winner?: PlayerView;
   targetScore: number;
   hostId?: string;
+  cheatMode?: boolean;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   // card-exchange phase
@@ -169,5 +170,9 @@ export interface ClientToServerEvents {
   kickFromGame: (
     data: { roomId: string; targetId: string },
     callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+  toggleCheatMode: (
+    data: { roomId: string },
+    callback: (result: { success: boolean; error?: string; cheatMode?: boolean }) => void
   ) => void;
 }

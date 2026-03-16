@@ -79,6 +79,7 @@ export interface GameStateView {
   winner?: PlayerView;
   targetScore: number;
   hostId?: string;
+  cheatMode?: boolean;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   exchangeRound?: number;
