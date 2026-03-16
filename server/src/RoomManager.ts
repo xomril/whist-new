@@ -51,7 +51,7 @@ export class RoomManager {
     // Game in progress — allow rejoin if a disconnected player has the same name
     if (room.game) {
       const disconnected = room.game.players.find(p => p.name === playerName && !p.isConnected);
-      if (!disconnected) return { success: false, error: 'Game already in progress' };
+      if (!disconnected) return { success: false, error: 'Game already in progress — ask the host to kick you first' };
 
       const oldId = disconnected.id;
       this.playerRoom.delete(oldId);

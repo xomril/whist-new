@@ -32,9 +32,12 @@ function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }
         <span className="text-white font-semibold text-sm max-w-[80px] truncate">{player.name}</span>
         {player.isDealer && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">D</span>}
         {player.isDeclarer && <span className="text-[10px] bg-yellow-800 text-yellow-300 px-1 rounded">★</span>}
-        {isHost && !player.isConnected && (
+        {isHost && (
           <button
-            className="text-[10px] bg-red-900/50 hover:bg-red-700/70 text-red-400 hover:text-white px-1.5 py-0.5 rounded border border-red-700/50 transition-colors"
+            className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors
+              ${player.isConnected
+                ? 'bg-slate-700/50 hover:bg-red-700/70 text-slate-500 hover:text-white border-slate-600/50 hover:border-red-700/50'
+                : 'bg-red-900/50 hover:bg-red-700/70 text-red-400 hover:text-white border-red-700/50'}`}
             title="Kick (allow rejoin)"
             onClick={() => socket.emit('kickFromGame', { roomId, targetId: player.id }, res => {
               if (!res.success) onError(res.error ?? 'Failed to kick');
