@@ -3,6 +3,58 @@ import { RoomInfo } from '../types';
 import { socket } from '../socket';
 import { useT, LangToggle } from '../i18n';
 
+function ZoomLinkSection({ room, isHost, onError }: { room: RoomInfo; isHost: boolean; onError: (m: string) => void }) {
+  const [draft, setDraft] = useState(room.zoomLink ?? '');
+
+  const save = () => {
+    socket.emit('setZoomLink', { roomId: room.id, link: draft }, res => {
+      if (!res.success) onError(res.error ?? 'Failed to save link');
+    });
+  };
+
+  if (isHost) {
+    return (
+      <div className="mb-5">
+        <label className="block text-xs font-medium text-slate-400 mb-1.5">📹 Zoom / Meet link (optional)</label>
+        <div className="flex gap-2">
+          <input
+            className="field flex-1 text-sm"
+            placeholder="https://zoom.us/j/..."
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={save}
+            onKeyDown={e => { if (e.key === 'Enter') save(); }}
+          />
+          {room.zoomLink && (
+            <a
+              href={room.zoomLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              Join
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!room.zoomLink) return null;
+  return (
+    <div className="mb-5">
+      <a
+        href={room.zoomLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-700/80 hover:bg-blue-600 border border-blue-500/60 text-white font-semibold rounded-xl transition-colors text-sm"
+      >
+        📹 Join Zoom / Meet
+      </a>
+    </div>
+  );
+}
+
 interface Props {
   room: RoomInfo;
   playerName: string;
@@ -46,6 +98,9 @@ export default function WaitingRoom({ room, onError }: Props) {
             Click to copy
           </p>
         </div>
+
+        {/* Zoom link */}
+        <ZoomLinkSection room={room} isHost={isHost} onError={onError} />
 
         {/* Players */}
         <div className="space-y-2 mb-6">

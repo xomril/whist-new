@@ -94,6 +94,7 @@ export interface RoomInfo {
   maxPlayers: 3 | 4;
   status: 'waiting' | 'playing';
   targetScore: number;
+  zoomLink?: string;
 }
 
 export const SUIT_SYMBOL: Record<Suit, string> = {

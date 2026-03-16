@@ -56,6 +56,10 @@ export interface ClientToServerEvents {
     data: { roomId: string },
     callback: (result: { success: boolean; error?: string; cheatMode?: boolean }) => void
   ) => void;
+  setZoomLink: (
+    data: { roomId: string; link: string },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
 }
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({

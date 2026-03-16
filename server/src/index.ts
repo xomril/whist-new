@@ -228,6 +228,14 @@ io.on('connection', socket => {
     if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
   });
 
+  // ── Zoom link ────────────────────────────────────────────────────────────────
+  socket.on('setZoomLink', ({ roomId, link }, cb) => {
+    const result = rooms.setZoomLink(roomId, socket.id, link);
+    if (!result.success) { cb(result); return; }
+    cb({ success: true });
+    io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
+  });
+
   // ── Cheat mode ───────────────────────────────────────────────────────────────
   socket.on('toggleCheatMode', ({ roomId }, cb) => {
     const result = rooms.toggleCheatMode(roomId, socket.id);

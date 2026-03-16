@@ -119,6 +119,7 @@ export interface RoomInfo {
   maxPlayers: 3 | 4;
   status: 'waiting' | 'playing';
   targetScore: number;
+  zoomLink?: string;
 }
 
 // ── Socket event maps ────────────────────────────────────────────────────────
@@ -174,5 +175,9 @@ export interface ClientToServerEvents {
   toggleCheatMode: (
     data: { roomId: string },
     callback: (result: { success: boolean; error?: string; cheatMode?: boolean }) => void
+  ) => void;
+  setZoomLink: (
+    data: { roomId: string; link: string },
+    callback: (result: { success: boolean; error?: string }) => void
   ) => void;
 }

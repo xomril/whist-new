@@ -128,7 +128,7 @@ function AppInner() {
       )}
 
       {view === 'game' && gameState && !gameState.isSpectator && (
-        <GameBoard state={gameState} playerName={playerName} onError={showToast} />
+        <GameBoard state={gameState} playerName={playerName} zoomLink={room?.zoomLink} onError={showToast} />
       )}
 
       {(view === 'spectate' || (view === 'game' && gameState?.isSpectator)) && gameState && (

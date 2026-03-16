@@ -16,6 +16,7 @@ import HistoryModal from './HistoryModal';
 interface Props {
   state: GameStateView;
   playerName: string;
+  zoomLink?: string;
   onError: (msg: string) => void;
 }
 
@@ -65,7 +66,7 @@ function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }
 }
 
 // ── Main board ────────────────────────────────────────────────────────────────
-export default function GameBoard({ state, onError }: Props) {
+export default function GameBoard({ state, zoomLink, onError }: Props) {
   const { t, tTrump } = useT();
   const isHost = state.hostId === socket.id;
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
@@ -212,6 +213,16 @@ export default function GameBoard({ state, onError }: Props) {
              phase}
           </span>
           <LangToggle />
+          {zoomLink && (
+            <a
+              href={zoomLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 py-0.5 rounded border text-xs font-semibold bg-blue-700/80 hover:bg-blue-600 border-blue-500/60 text-white transition-colors"
+            >
+              📹 Zoom
+            </a>
+          )}
           {isHost && (
             <button
               className={`px-2 py-0.5 rounded border text-xs font-semibold transition-colors

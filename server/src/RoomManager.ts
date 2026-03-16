@@ -11,6 +11,7 @@ interface Room {
   game?: WhistGame;
   spectatorIds: Set<string>;
   botIds: Set<string>;
+  zoomLink?: string;
 }
 
 export class RoomManager {
@@ -116,7 +117,16 @@ export class RoomManager {
       maxPlayers: room.maxPlayers,
       status: room.game ? 'playing' : 'waiting',
       targetScore: room.targetScore,
+      zoomLink: room.zoomLink,
     };
+  }
+
+  setZoomLink(roomId: string, hostId: string, link: string): { success: boolean; error?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== hostId) return { success: false, error: 'Only the host can set the Zoom link' };
+    room.zoomLink = link.trim() || undefined;
+    return { success: true };
   }
 
   // ── Bots ───────────────────────────────────────────────────────────────────
