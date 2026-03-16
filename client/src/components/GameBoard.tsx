@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameStateView, PlayerView, SUIT_SYMBOL } from '../types';
 import { socket } from '../socket';
 import { useT, LangToggle } from '../i18n';
@@ -75,6 +75,9 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
   const [showHistory, setShowHistory] = useState(false);
   const [showLastTrick, setShowLastTrick] = useState(false);
   const [showTurnReminder, setShowTurnReminder] = useState(false);
+  const [receivedCards, setReceivedCards] = useState<{ cards: import('../types').Card[]; fromName: string } | null>(null);
+  const handAfterSubmitRef = useRef<import('../types').Card[] | null>(null);
+  const exchangeRoundRef = useRef<number>(1);
 
   const {
     phase, myHand, players, myIndex, currentPlayerIndex,
@@ -98,6 +101,27 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
     }, 30_000);
     return () => clearTimeout(id);
   }, [isMyTurn, currentPlayerIndex, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Track the hand right after submitting exchange (3 given cards already removed server-side)
+  useEffect(() => {
+    if (phase === 'cardExchange' && state.exchangeSubmitted && !handAfterSubmitRef.current) {
+      handAfterSubmitRef.current = [...myHand];
+      exchangeRoundRef.current = state.exchangeRound ?? 1;
+    }
+    // When exchange completes and bid1 starts, diff to find received cards
+    if (phase === 'bid1' && handAfterSubmitRef.current) {
+      const prev = handAfterSubmitRef.current;
+      const received = myHand.filter(c => !prev.some((pc: import('../types').Card) => pc.rank === c.rank && pc.suit === c.suit));
+      if (received.length > 0) {
+        const n = players.length;
+        const offset = exchangeRoundRef.current === 1 ? 1 : exchangeRoundRef.current === 2 ? 2 : n - 1;
+        const sourceIndex = (myIndex + n - offset) % n;
+        const fromName = players[sourceIndex]?.name ?? '';
+        setReceivedCards({ cards: received, fromName });
+      }
+      handAfterSubmitRef.current = null;
+    }
+  }, [phase, state.exchangeSubmitted]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const me = players[myIndex];
   const lastTrick = completedTricks[completedTricks.length - 1];
 
@@ -480,6 +504,31 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
       )}
 
       {/* ── Modals ── */}
+      {/* ── Received cards overlay ── */}
+      {receivedCards && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setReceivedCards(null)}>
+          <div className="bg-slate-900 border border-emerald-500/60 rounded-2xl shadow-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="text-emerald-400 font-bold text-lg mb-0.5">You received!</div>
+              <div className="text-slate-400 text-sm">from <span className="text-white font-semibold">{receivedCards.fromName}</span></div>
+            </div>
+            <div className="flex gap-3 justify-center mb-5">
+              {receivedCards.cards.map((card, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <CardComponent card={card} className="ring-2 ring-emerald-400 shadow-lg shadow-emerald-900/40" />
+                </div>
+              ))}
+            </div>
+            <button
+              className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors text-sm"
+              onClick={() => setReceivedCards(null)}
+            >
+              Got it ✓
+            </button>
+          </div>
+        </div>
+      )}
+
       {phase === 'cardExchange' && !state.isSpectator && (
         <CardExchange
           state={state}
