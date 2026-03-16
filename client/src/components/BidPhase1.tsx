@@ -34,18 +34,11 @@ export default function BidPhase1({ minTricks, maxTricks, currentHighBid, isMyTu
   const [selectedTricks, setSelectedTricks] = useState(minTricks);
   const [loading, setLoading] = useState(false);
 
-  // When entering confirm mode, prime the selector one step above the current bid
+  // When entering confirm mode, show the player's own winning bid
   useEffect(() => {
     if (isDeclarerConfirm && currentHighBid) {
-      const SUITS: TrumpSuit[] = ['clubs', 'diamonds', 'hearts', 'spades', 'notrumps'];
-      const suitIdx = SUITS.indexOf(currentHighBid.suit);
-      if (suitIdx < SUITS.length - 1) {
-        setSelectedTricks(currentHighBid.tricks);
-        setSelectedSuit(SUITS[suitIdx + 1]);
-      } else {
-        setSelectedTricks(Math.min(currentHighBid.tricks + 1, maxTricks));
-        setSelectedSuit('clubs');
-      }
+      setSelectedTricks(currentHighBid.tricks);
+      setSelectedSuit(currentHighBid.suit);
     }
   }, [isDeclarerConfirm]); // eslint-disable-line react-hooks/exhaustive-deps
 
