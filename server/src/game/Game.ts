@@ -79,6 +79,29 @@ export class WhistGame {
     if (p) p.isConnected = connected;
   }
 
+  /** Remap a player's socket ID (used when a disconnected player reconnects with a new socket). */
+  updatePlayerId(oldId: string, newId: string): void {
+    const player = this.players.find(p => p.id === oldId);
+    if (!player) return;
+    player.id = newId;
+    player.isConnected = true;
+
+    if (this.bid1Passed.has(oldId)) {
+      this.bid1Passed.delete(oldId);
+      this.bid1Passed.add(newId);
+    }
+    if (this.currentHighBidderId === oldId) this.currentHighBidderId = newId;
+    this.bid2Order = this.bid2Order.map(id => id === oldId ? newId : id);
+    for (const tc of this.currentTrick) {
+      if (tc.playerId === oldId) tc.playerId = newId;
+    }
+    if (this.exchangeSelections.has(oldId)) {
+      const cards = this.exchangeSelections.get(oldId)!;
+      this.exchangeSelections.delete(oldId);
+      this.exchangeSelections.set(newId, cards);
+    }
+  }
+
   // ── Game lifecycle ─────────────────────────────────────────────────────────
   startGame(): void {
     this.handNumber = 0;

@@ -78,6 +78,7 @@ export interface GameStateView {
   bid2ForbiddenValue?: number;
   winner?: PlayerView;
   targetScore: number;
+  hostId?: string;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   exchangeRound?: number;

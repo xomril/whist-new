@@ -75,9 +75,9 @@ function AppInner() {
     socket.on('error', ({ message }) => showToast(message));
 
     socket.on('kicked', ({ reason }) => {
-      setView('lobby');
-      setRoom(null);
       setGameState(null);
+      setRoom(null);
+      setView('lobby');
       showToast(reason);
     });
 

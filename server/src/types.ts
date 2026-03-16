@@ -101,6 +101,7 @@ export interface GameStateView {
   bid2ForbiddenValue?: number;
   winner?: PlayerView;
   targetScore: number;
+  hostId?: string;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   // card-exchange phase
@@ -162,6 +163,10 @@ export interface ClientToServerEvents {
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   kickPlayer: (
+    data: { roomId: string; targetId: string },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+  kickFromGame: (
     data: { roomId: string; targetId: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;

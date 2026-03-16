@@ -48,6 +48,10 @@ export interface ClientToServerEvents {
     data: { roomId: string; targetId: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
+  kickFromGame: (
+    data: { roomId: string; targetId: string },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
 }
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io({

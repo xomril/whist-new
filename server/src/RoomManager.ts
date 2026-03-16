@@ -43,11 +43,28 @@ export class RoomManager {
     rawRoomId: string,
     playerId: string,
     playerName: string
-  ): { success: boolean; error?: string; roomId?: string } {
+  ): { success: boolean; error?: string; roomId?: string; rejoined?: boolean } {
     const roomId = rawRoomId.toUpperCase().trim();
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, error: 'Room not found' };
-    if (room.game) return { success: false, error: 'Game already in progress' };
+
+    // Game in progress — allow rejoin if a disconnected player has the same name
+    if (room.game) {
+      const disconnected = room.game.players.find(p => p.name === playerName && !p.isConnected);
+      if (!disconnected) return { success: false, error: 'Game already in progress' };
+
+      const oldId = disconnected.id;
+      this.playerRoom.delete(oldId);
+      this.playerRoom.set(playerId, roomId);
+      const idx = room.playerIds.indexOf(oldId);
+      if (idx !== -1) room.playerIds[idx] = playerId;
+      room.playerNames.delete(oldId);
+      room.playerNames.set(playerId, playerName);
+      if (room.hostId === oldId) room.hostId = playerId;
+      room.game.updatePlayerId(oldId, playerId);
+      return { success: true, roomId, rejoined: true };
+    }
+
     if (room.playerIds.length >= room.maxPlayers) return { success: false, error: 'Room is full' };
     if (room.playerIds.includes(playerId)) return { success: false, error: 'Already in room' };
 
@@ -156,6 +173,21 @@ export class RoomManager {
   }
 
   // ── Kick ───────────────────────────────────────────────────────────────────
+  kickFromGame(roomId: string, hostId: string, targetId: string): { success: boolean; error?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== hostId) return { success: false, error: 'Only the host can kick players' };
+    if (!room.game) return { success: false, error: 'No game in progress' };
+    if (targetId === hostId) return { success: false, error: 'Cannot kick yourself' };
+    if (!room.playerIds.includes(targetId)) return { success: false, error: 'Player not in room' };
+
+    // Remove socket mapping so they can reconnect with a new socket;
+    // keep the game slot (id stays in playerIds / game.players) but mark disconnected
+    this.playerRoom.delete(targetId);
+    room.game.setConnected(targetId, false);
+    return { success: true };
+  }
+
   removePlayer(roomId: string, hostId: string, targetId: string): { success: boolean; error?: string } {
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, error: 'Room not found' };

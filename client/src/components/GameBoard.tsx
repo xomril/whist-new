@@ -20,7 +20,10 @@ interface Props {
 }
 
 // ── Small badge shown above each opponent position ─────────────────────────
-function OpponentInfo({ player, isActive, totalTricks }: { player: PlayerView; isActive: boolean; totalTricks: number }) {
+function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }: {
+  player: PlayerView; isActive: boolean; totalTricks: number;
+  isHost: boolean; roomId: string; onError: (msg: string) => void;
+}) {
   return (
     <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all
       ${isActive ? 'border-yellow-400 bg-yellow-400/10 animate-pulse-glow' : 'border-slate-700 bg-slate-900/60'}`}>
@@ -29,6 +32,17 @@ function OpponentInfo({ player, isActive, totalTricks }: { player: PlayerView; i
         <span className="text-white font-semibold text-sm max-w-[80px] truncate">{player.name}</span>
         {player.isDealer && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">D</span>}
         {player.isDeclarer && <span className="text-[10px] bg-yellow-800 text-yellow-300 px-1 rounded">★</span>}
+        {isHost && !player.isConnected && (
+          <button
+            className="text-[10px] bg-red-900/50 hover:bg-red-700/70 text-red-400 hover:text-white px-1.5 py-0.5 rounded border border-red-700/50 transition-colors"
+            title="Kick (allow rejoin)"
+            onClick={() => socket.emit('kickFromGame', { roomId, targetId: player.id }, res => {
+              if (!res.success) onError(res.error ?? 'Failed to kick');
+            })}
+          >
+            ✕
+          </button>
+        )}
       </div>
       <div className="flex gap-2 text-xs text-slate-400">
         {player.bid2 !== undefined && (
@@ -50,6 +64,7 @@ function OpponentInfo({ player, isActive, totalTricks }: { player: PlayerView; i
 // ── Main board ────────────────────────────────────────────────────────────────
 export default function GameBoard({ state, onError }: Props) {
   const { t, tTrump } = useT();
+  const isHost = state.hostId === socket.id;
   const [selectedCardIndex, setSelectedCardIndex] = useState<number | null>(null);
   const [exchangeSelected, setExchangeSelected] = useState<number[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
@@ -218,6 +233,9 @@ export default function GameBoard({ state, onError }: Props) {
               player={opTop}
               isActive={players[currentPlayerIndex]?.id === opTop.id}
               totalTricks={totalTricks}
+              isHost={isHost}
+              roomId={state.roomId}
+              onError={onError}
             />
           </div>
         )}
@@ -231,6 +249,9 @@ export default function GameBoard({ state, onError }: Props) {
                 player={opLeft}
                 isActive={players[currentPlayerIndex]?.id === opLeft.id}
                 totalTricks={totalTricks}
+                isHost={isHost}
+                roomId={state.roomId}
+                onError={onError}
               />
             </div>
           )}
@@ -298,6 +319,9 @@ export default function GameBoard({ state, onError }: Props) {
                 player={opRight}
                 isActive={players[currentPlayerIndex]?.id === opRight.id}
                 totalTricks={totalTricks}
+                isHost={isHost}
+                roomId={state.roomId}
+                onError={onError}
               />
             </div>
           )}

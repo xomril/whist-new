@@ -37,7 +37,9 @@ function broadcastState(roomId: string) {
   // Skip bots when broadcasting — they have no socket
   for (const { id } of info?.players ?? []) {
     if (!rooms.isBot(roomId, id)) {
-      io.to(id).emit('gameState', game.stateFor(id));
+      const state = game.stateFor(id);
+      state.hostId = info?.hostId;
+      io.to(id).emit('gameState', state);
     }
   }
   for (const sid of rooms.getSpectatorIds(roomId)) {
@@ -124,6 +126,13 @@ io.on('connection', socket => {
     const roomId = result.roomId!;
     socket.join(roomId);
     cb({ success: true });
+
+    // Rejoining a game in progress — send game state directly
+    if (result.rejoined) {
+      broadcastState(roomId);
+      return;
+    }
+
     io.to(roomId).emit('roomUpdated', { room: rooms.getRoomInfo(roomId)! });
 
     if (rooms.isFull(roomId)) {
@@ -216,6 +225,16 @@ io.on('connection', socket => {
     const result = game.nextHand();
     cb(result);
     if (result.success) { broadcastState(roomId); scheduleBotTurn(roomId); }
+  });
+
+  // ── Kick from game ───────────────────────────────────────────────────────────
+  socket.on('kickFromGame', ({ roomId, targetId }, cb) => {
+    const result = rooms.kickFromGame(roomId, socket.id, targetId);
+    if (!result.success) { cb(result); return; }
+
+    cb({ success: true });
+    io.to(targetId).emit('kicked', { reason: 'You were removed from the game. Rejoin with the same name.' });
+    broadcastState(roomId);
   });
 
   // ── Kick player ──────────────────────────────────────────────────────────────
