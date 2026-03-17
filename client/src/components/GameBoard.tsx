@@ -247,7 +247,7 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
               📹 Zoom
             </a>
           )}
-          {isHost && (
+          {isHost && players.find(p => p.id === state.hostId)?.name === 'Omri' && (
             <button
               className={`px-2 py-0.5 rounded border text-xs font-semibold transition-colors
                 ${state.cheatMode
