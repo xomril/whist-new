@@ -7,13 +7,14 @@ interface Props {
   onJoined: (name: string, roomId: string) => void;
   onSpectate: (roomId: string) => void;
   onError: (msg: string) => void;
+  initialRoomCode?: string;
 }
 
-export default function Lobby({ onCreated, onJoined, onSpectate, onError }: Props) {
+export default function Lobby({ onCreated, onJoined, onSpectate, onError, initialRoomCode = '' }: Props) {
   const { t } = useT();
-  const [tab, setTab] = useState<'create' | 'join' | 'watch'>('create');
+  const [tab, setTab] = useState<'create' | 'join' | 'watch'>(initialRoomCode ? 'join' : 'create');
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(initialRoomCode);
   const [maxPlayers, setMaxPlayers] = useState<3 | 4>(4);
   const [targetScore, setTargetScore] = useState(13);
   const [loading, setLoading] = useState(false);

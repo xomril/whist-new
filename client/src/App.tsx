@@ -18,6 +18,9 @@ function AppInner() {
   const [gameState, setGameState] = useState<GameStateView | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Read ?room= from URL to pre-fill join form
+  const initialRoomCode = new URLSearchParams(window.location.search).get('room')?.toUpperCase() ?? '';
+
   const prevState = useRef<GameStateView | null>(null);
 
   const showToast = (msg: string) => {
@@ -78,6 +81,7 @@ function AppInner() {
       setGameState(null);
       setRoom(null);
       setView('lobby');
+      history.replaceState(null, '', window.location.pathname);
       showToast(reason);
     });
 
@@ -92,12 +96,14 @@ function AppInner() {
   const handleCreated = (name: string, rid: string) => {
     setPlayerName(name);
     setRoomId(rid);
+    history.replaceState(null, '', `?room=${rid}`);
     setView('waiting');
   };
 
   const handleJoined = (name: string, rid: string) => {
     setPlayerName(name);
     setRoomId(rid);
+    history.replaceState(null, '', `?room=${rid}`);
   };
 
   const handleSpectate = (rid: string) => {
@@ -120,6 +126,7 @@ function AppInner() {
           onJoined={handleJoined}
           onSpectate={handleSpectate}
           onError={showToast}
+          initialRoomCode={initialRoomCode}
         />
       )}
 

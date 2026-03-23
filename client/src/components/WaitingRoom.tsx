@@ -68,7 +68,20 @@ export default function WaitingRoom({ room, onError }: Props) {
   const isHost = room.hostId === socket.id;
   const emptySlots = room.maxPlayers - room.players.length;
 
-  const copyCode = () => navigator.clipboard.writeText(room.id).catch(() => {});
+  const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(room.id).catch(() => {});
+    setCopied('code');
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  const copyLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}?room=${room.id}`;
+    navigator.clipboard.writeText(url).catch(() => {});
+    setCopied('link');
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   const handleAddBots = () => {
     setAddingBots(true);
@@ -88,16 +101,24 @@ export default function WaitingRoom({ room, onError }: Props) {
 
         {/* Room code */}
         <div
-          className="bg-slate-800 rounded-xl p-5 text-center mb-6 cursor-pointer hover:bg-slate-700 transition-colors border border-slate-600 group"
+          className="bg-slate-800 rounded-xl p-5 text-center mb-3 cursor-pointer hover:bg-slate-700 transition-colors border border-slate-600 group"
           onClick={copyCode}
-          title="Click to copy"
+          title="Click to copy code"
         >
           <p className="text-xs text-slate-400 mb-1 uppercase tracking-wider">{t('labelRoomCode')}</p>
           <p className="text-4xl font-black tracking-widest text-emerald-400 font-mono">{room.id}</p>
           <p className="text-xs text-slate-500 mt-2 group-hover:text-slate-400 transition-colors">
-            Click to copy
+            {copied === 'code' ? '✓ Copied!' : 'Click to copy'}
           </p>
         </div>
+
+        {/* Share link */}
+        <button
+          className="w-full mb-6 py-2 px-4 rounded-xl text-sm font-medium border border-slate-600 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex items-center justify-center gap-2"
+          onClick={copyLink}
+        >
+          {copied === 'link' ? '✓ Link copied!' : '🔗 Copy invite link'}
+        </button>
 
         {/* Zoom link */}
         <ZoomLinkSection room={room} isHost={isHost} onError={onError} />
