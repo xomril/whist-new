@@ -44,11 +44,11 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
       <table className="w-full">
         <thead>
           <tr className="text-xs text-slate-500 uppercase">
-            <th className="px-3 pt-2 pb-1 text-left">{t('colPlayer')}</th>
-            <th className="px-2 pt-2 pb-1 text-center">{t('colBid1')}</th>
-            <th className="px-2 pt-2 pb-1 text-center">{t('colBid2')}</th>
-            <th className="px-2 pt-2 pb-1 text-center">{t('colWon')}</th>
-            <th className="px-3 pt-2 pb-1 text-right">{t('colScore')}</th>
+            <th className="px-2 pt-2 pb-1 text-left">{t('colPlayer')}</th>
+            <th className="px-1 pt-2 pb-1 text-center">{t('colBid1')}</th>
+            <th className="px-1 pt-2 pb-1 text-center">{t('colBid2')}</th>
+            <th className="px-1 pt-2 pb-1 text-center">{t('colWon')}</th>
+            <th className="px-2 pt-2 pb-1 text-right">{t('colScore')}</th>
           </tr>
         </thead>
         <tbody>
@@ -59,10 +59,10 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
 
             return (
               <tr key={p.id} className={`border-t border-slate-800 ${isMe ? 'bg-emerald-900/20' : ''}`}>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
+                <td className="px-2 py-1.5">
+                  <div className="flex items-center gap-1.5">
                     {rank === 0 && <span className="text-yellow-400">👑</span>}
-                    <span className={`font-medium truncate max-w-[100px] ${isMe ? 'text-emerald-400' : 'text-white'}`}>
+                    <span className={`font-medium truncate max-w-[90px] ${isMe ? 'text-emerald-400' : 'text-white'}`}>
                       {p.name}
                     </span>
                     <div className="flex gap-0.5">
@@ -72,7 +72,7 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
                     {!p.isConnected && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
                   </div>
                 </td>
-                <td className="px-2 py-2 text-center text-slate-400 text-xs">
+                <td className="px-1 py-1.5 text-center text-slate-400 text-xs">
                   {p.bid1
                     ? p.bid1.type === 'pass'
                       ? '—'
@@ -84,28 +84,20 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
                         </span>
                     : '…'}
                 </td>
-                <td className="px-2 py-2 text-center font-bold">
+                <td className="px-1 py-1.5 text-center font-bold">
                   {bid2Done ? <span className={p.bid2 === 0 ? 'text-purple-400' : 'text-white'}>{p.bid2}</span> : '…'}
                 </td>
-                <td className="px-2 py-2 text-center">
+                <td className="px-1 py-1.5 text-center">
                   {p.tricksTaken > 0 || bid2Done ? (
                     <span className={`font-bold ${tricksMet ? 'text-emerald-400' : p.tricksTaken > 0 ? 'text-orange-400' : 'text-slate-400'}`}>
                       {p.tricksTaken}/{totalTricks}
                     </span>
                   ) : '—'}
                 </td>
-                <td className="px-3 py-2 text-right">
-                  <div className="flex flex-col items-end">
-                    <span className={`font-bold ${p.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {p.score > 0 ? '+' : ''}{p.score}
-                    </span>
-                    <div className="h-1 rounded-full bg-slate-700 w-16 mt-1">
-                      <div
-                        className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                        style={{ width: `${(handNumber / targetScore) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                <td className="px-2 py-1.5 text-right font-bold">
+                  <span className={p.score >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    {p.score > 0 ? '+' : ''}{p.score}
+                  </span>
                 </td>
               </tr>
             );
