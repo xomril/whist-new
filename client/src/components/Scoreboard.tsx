@@ -62,7 +62,7 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
                     {rank === 0 && <span className="text-yellow-400">👑</span>}
-                    <span className={`font-medium truncate max-w-[80px] ${isMe ? 'text-emerald-400' : 'text-white'}`}>
+                    <span className={`font-medium truncate max-w-[100px] ${isMe ? 'text-emerald-400' : 'text-white'}`}>
                       {p.name}
                     </span>
                     <div className="flex gap-0.5">

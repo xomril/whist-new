@@ -478,7 +478,7 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
 
         {/* ── Scoreboard overlay ── */}
         {showScoreboard && (
-          <div className="absolute top-0 right-0 z-30 w-64 p-2" onClick={e => e.stopPropagation()}>
+          <div className="absolute top-0 right-0 z-30 w-80 p-2" onClick={e => e.stopPropagation()}>
             <Scoreboard
               players={players}
               myIndex={myIndex}

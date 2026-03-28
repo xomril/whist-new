@@ -426,7 +426,8 @@ export class WhistGame {
     winner.tricksTaken++;
 
     // Clown detection: trump cut happened → player with highest led-suit card gets a 🤡
-    if (this.trumpSuit && this.trumpSuit !== 'notrumps') {
+    // Only counts when the led suit is NOT trump (otherwise it's normal trump play, not a cut)
+    if (this.trumpSuit && this.trumpSuit !== 'notrumps' && leadSuit !== this.trumpSuit) {
       const trumpPlayed = this.currentTrick.some(tc => tc.card.suit === this.trumpSuit);
       if (trumpPlayed) {
         const RANK_ORDER = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
