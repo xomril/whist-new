@@ -17,6 +17,7 @@ interface ServerPlayer {
   tricksTaken: number;
   score: number;
   isConnected: boolean;
+  clownCount: number;
 }
 
 // ── Game class ───────────────────────────────────────────────────────────────
@@ -70,7 +71,7 @@ export class WhistGame {
   addPlayer(id: string, name: string): boolean {
     if (this.players.length >= this.maxPlayers) return false;
     if (this.players.find(p => p.id === id)) return false;
-    this.players.push({ id, name, hand: [], tricksTaken: 0, score: 0, isConnected: true });
+    this.players.push({ id, name, hand: [], tricksTaken: 0, score: 0, isConnected: true, clownCount: 0 });
     return true;
   }
 
@@ -424,6 +425,22 @@ export class WhistGame {
     const winner = this.players.find(p => p.id === winnerId)!;
     winner.tricksTaken++;
 
+    // Clown detection: trump cut happened → player with highest led-suit card gets a 🤡
+    if (this.trumpSuit && this.trumpSuit !== 'notrumps') {
+      const trumpPlayed = this.currentTrick.some(tc => tc.card.suit === this.trumpSuit);
+      if (trumpPlayed) {
+        const RANK_ORDER = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+        const ledSuitCards = this.currentTrick.filter(tc => tc.card.suit === leadSuit);
+        if (ledSuitCards.length > 0) {
+          const highest = ledSuitCards.reduce((best, tc) =>
+            RANK_ORDER.indexOf(tc.card.rank) > RANK_ORDER.indexOf(best.card.rank) ? tc : best
+          );
+          const clownPlayer = this.players.find(p => p.id === highest.playerId);
+          if (clownPlayer) clownPlayer.clownCount++;
+        }
+      }
+    }
+
     this.completedTricks.push({
       cards: [...this.currentTrick],
       winnerId,
@@ -491,6 +508,7 @@ export class WhistGame {
       isConnected: p.isConnected,
       isDealer: i === this.dealerIndex,
       isDeclarer: i === this.declarerIndex,
+      clownCount: p.clownCount,
     }));
     const winner =
       this.phase === 'gameOver'
@@ -542,6 +560,7 @@ export class WhistGame {
       isConnected: p.isConnected,
       isDealer: i === this.dealerIndex,
       isDeclarer: i === this.declarerIndex,
+      clownCount: p.clownCount,
     }));
 
     const winner =

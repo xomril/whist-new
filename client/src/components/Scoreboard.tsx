@@ -1,5 +1,13 @@
-import { PlayerView, TrumpSuit } from '../types';
+import { PlayerView, TrumpSuit, SUIT_SYMBOL } from '../types';
 import { useT } from '../i18n';
+
+const SUIT_COLOR: Record<string, string> = {
+  spades:   'text-slate-200',
+  clubs:    'text-emerald-400',
+  hearts:   'text-red-400',
+  diamonds: 'text-orange-400',
+  notrumps: 'text-slate-400',
+};
 
 interface Props {
   players: PlayerView[];
@@ -65,7 +73,16 @@ export default function Scoreboard({ players, myIndex, trumpSuit, targetScore, i
                   </div>
                 </td>
                 <td className="px-2 py-2 text-center text-slate-400 text-xs">
-                  {p.bid1 ? (p.bid1.type === 'pass' ? '—' : `${p.bid1.bid.tricks}${tTrump(p.bid1.bid.suit)[0]}`) : '…'}
+                  {p.bid1
+                    ? p.bid1.type === 'pass'
+                      ? '—'
+                      : <span className="inline-flex items-baseline gap-0.5">
+                          <span>{p.bid1.bid.tricks}</span>
+                          <span className={`text-2xl leading-none font-bold ${SUIT_COLOR[p.bid1.bid.suit] ?? 'text-slate-400'}`}>
+                            {SUIT_SYMBOL[p.bid1.bid.suit as never] ?? 'NT'}
+                          </span>
+                        </span>
+                    : '…'}
                 </td>
                 <td className="px-2 py-2 text-center font-bold">
                   {bid2Done ? <span className={p.bid2 === 0 ? 'text-purple-400' : 'text-white'}>{p.bid2}</span> : '…'}

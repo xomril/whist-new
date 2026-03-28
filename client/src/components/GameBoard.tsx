@@ -31,6 +31,9 @@ function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }
       <div className="flex items-center gap-1.5">
         <div className={`w-2 h-2 rounded-full ${player.isConnected ? 'bg-emerald-400' : 'bg-red-500'}`} />
         <span className="text-white font-semibold text-sm max-w-[80px] truncate">{player.name}</span>
+        <span className={`text-xs font-bold ${player.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{player.score}</span>
+        {player.clownCount === 1 && <span title="Got cut once">🤡</span>}
+        {player.clownCount >= 2 && <span title={`Got cut ${player.clownCount} times`} className="text-xs">🤡×{player.clownCount}</span>}
         {player.isDealer && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">D</span>}
         {player.isDeclarer && <span className="text-[10px] bg-yellow-800 text-yellow-300 px-1 rounded">★</span>}
         {isHost && (
@@ -395,6 +398,8 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400" />
                 <span className="text-emerald-400 font-bold">{me.name}</span>
+                {me.clownCount === 1 && <span title="Got cut once">🤡</span>}
+                {me.clownCount >= 2 && <span title={`Got cut ${me.clownCount} times`} className="text-xs">🤡×{me.clownCount}</span>}
                 {me.isDealer && <span className="text-[10px] bg-slate-700 text-slate-300 px-1 rounded">D</span>}
                 {me.isDeclarer && <span className="text-[10px] bg-yellow-800 text-yellow-300 px-1 rounded">★ Declarer</span>}
               </div>

@@ -37,6 +37,7 @@ export interface PlayerView {
   isConnected: boolean;
   isDealer: boolean;
   isDeclarer: boolean;
+  clownCount: number;
 }
 
 export interface HandRecord {

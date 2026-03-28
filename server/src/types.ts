@@ -71,6 +71,7 @@ export interface PlayerView {
   isConnected: boolean;
   isDealer: boolean;
   isDeclarer: boolean;
+  clownCount: number;
 }
 
 // ── Full game-state view sent to each client ─────────────────────────────────
