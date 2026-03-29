@@ -18,6 +18,7 @@ export default function Lobby({ onCreated, onJoined, onSpectate, onError, initia
   const [maxPlayers, setMaxPlayers] = useState<3 | 4>(4);
   const [targetScore, setTargetScore] = useState(13);
   const [loading, setLoading] = useState(false);
+  const [watchPassword, setWatchPassword] = useState('');
 
   const handleCreate = () => {
     if (!name.trim()) { onError(t('placeholderName')); return; }
@@ -43,7 +44,7 @@ export default function Lobby({ onCreated, onJoined, onSpectate, onError, initia
   const handleWatch = () => {
     if (!roomCode.trim()) { onError(t('labelRoomCode')); return; }
     setLoading(true);
-    socket.emit('spectate', { roomId: roomCode.trim().toUpperCase() }, res => {
+    socket.emit('spectate', { roomId: roomCode.trim().toUpperCase(), password: watchPassword.trim() || undefined }, res => {
       setLoading(false);
       if (res.success) onSpectate(roomCode.trim().toUpperCase());
       else onError(res.error ?? 'Failed to spectate');
@@ -168,6 +169,17 @@ export default function Lobby({ onCreated, onJoined, onSpectate, onError, initia
                   value={roomCode}
                   maxLength={6}
                   onChange={e => setRoomCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => { if (e.key === 'Enter') handleWatch(); }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Password (if required)</label>
+                <input
+                  className="field"
+                  placeholder="Leave empty if no password"
+                  type="password"
+                  value={watchPassword}
+                  onChange={e => setWatchPassword(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleWatch(); }}
                 />
               </div>

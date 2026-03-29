@@ -14,7 +14,11 @@ export interface ClientToServerEvents {
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   spectate: (
-    data: { roomId: string },
+    data: { roomId: string; password?: string },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+  setSpectatorPassword: (
+    data: { roomId: string; password: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   createRoom: (

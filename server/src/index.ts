@@ -40,6 +40,10 @@ function broadcastState(roomId: string) {
       const state = game.stateFor(id);
       state.hostId = info?.hostId;
       state.cheatMode = rooms.isCheatMode(roomId);
+      state.spectatorPasswordSet = rooms.hasSpectatorPassword(roomId);
+      if (state.cheatMode && id === info?.hostId) {
+        state.allHands = game.players.map(p => p.hand);
+      }
       io.to(id).emit('gameState', state);
     }
   }
@@ -159,13 +163,19 @@ io.on('connection', socket => {
   });
 
   // ── Spectate ─────────────────────────────────────────────────────────────────
-  socket.on('spectate', ({ roomId: raw }, cb) => {
-    const result = rooms.spectate(raw, socket.id);
+  socket.on('spectate', ({ roomId: raw, password }, cb) => {
+    const result = rooms.spectate(raw, socket.id, password);
     if (!result.success) { cb(result); return; }
     socket.join(result.roomId!);
     cb({ success: true });
     const game = rooms.getGame(result.roomId!);
     if (game) socket.emit('gameState', game.stateForSpectator());
+  });
+
+  // ── Set spectator password ────────────────────────────────────────────────────
+  socket.on('setSpectatorPassword', ({ roomId, password }, cb) => {
+    const result = rooms.setSpectatorPassword(roomId, socket.id, password);
+    cb(result);
   });
 
   // ── Phase-1 bid ──────────────────────────────────────────────────────────────

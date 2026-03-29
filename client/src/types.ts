@@ -81,6 +81,7 @@ export interface GameStateView {
   targetScore: number;
   hostId?: string;
   cheatMode?: boolean;
+  spectatorPasswordSet?: boolean;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   exchangeRound?: number;
@@ -96,6 +97,7 @@ export interface RoomInfo {
   status: 'waiting' | 'playing';
   targetScore: number;
   zoomLink?: string;
+  spectatorPasswordSet?: boolean;
 }
 
 export const SUIT_SYMBOL: Record<Suit, string> = {

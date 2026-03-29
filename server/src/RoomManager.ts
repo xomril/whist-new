@@ -12,6 +12,7 @@ interface Room {
   spectatorIds: Set<string>;
   botIds: Set<string>;
   zoomLink?: string;
+  spectatorPassword?: string;
 }
 
 export class RoomManager {
@@ -118,6 +119,7 @@ export class RoomManager {
       status: room.game ? 'playing' : 'waiting',
       targetScore: room.targetScore,
       zoomLink: room.zoomLink,
+      spectatorPasswordSet: !!room.spectatorPassword,
     };
   }
 
@@ -162,14 +164,29 @@ export class RoomManager {
   }
 
   // ── Spectate ───────────────────────────────────────────────────────────────
-  spectate(rawRoomId: string, socketId: string): { success: boolean; error?: string; roomId?: string } {
+  spectate(rawRoomId: string, socketId: string, password?: string): { success: boolean; error?: string; roomId?: string } {
     const roomId = rawRoomId.toUpperCase().trim();
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, error: 'Room not found' };
     if (!room.game) return { success: false, error: 'Game has not started yet' };
+    if (room.spectatorPassword && room.spectatorPassword !== (password ?? '')) {
+      return { success: false, error: 'Wrong password' };
+    }
     room.spectatorIds.add(socketId);
     this.playerRoom.set(socketId, roomId);
     return { success: true, roomId };
+  }
+
+  setSpectatorPassword(roomId: string, hostId: string, password: string): { success: boolean; error?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, error: 'Room not found' };
+    if (room.hostId !== hostId) return { success: false, error: 'Only the host can set the password' };
+    room.spectatorPassword = password.trim() || undefined;
+    return { success: true };
+  }
+
+  hasSpectatorPassword(roomId: string): boolean {
+    return !!(this.rooms.get(roomId)?.spectatorPassword);
   }
 
   getSpectatorIds(roomId: string): string[] {

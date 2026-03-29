@@ -21,16 +21,21 @@ interface Props {
 }
 
 // ── Small badge shown above each opponent position ─────────────────────────
-function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }: {
+function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError, cheatHand, onClickName }: {
   player: PlayerView; isActive: boolean; totalTricks: number;
   isHost: boolean; roomId: string; onError: (msg: string) => void;
+  cheatHand?: import('../types').Card[];
+  onClickName?: () => void;
 }) {
   return (
     <div className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all
       ${isActive ? 'border-yellow-400 bg-yellow-400/10 animate-pulse-glow' : 'border-slate-700 bg-slate-900/60'}`}>
       <div className="flex items-center gap-1.5">
         <div className={`w-2 h-2 rounded-full ${player.isConnected ? 'bg-emerald-400' : 'bg-red-500'}`} />
-        <span className="text-white font-semibold text-sm max-w-[80px] truncate">{player.name}</span>
+        <span
+          className={`text-white font-semibold text-sm max-w-[80px] truncate ${onClickName ? 'cursor-pointer underline decoration-dotted hover:text-yellow-300' : ''}`}
+          onClick={onClickName}
+        >{player.name}</span>
         <span className={`text-xs font-bold ${player.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{player.score}</span>
         {player.clownCount === 1 && <span title="Got cut once">🤡</span>}
         {player.clownCount >= 2 && <span title={`Got cut ${player.clownCount} times`} className="text-xs">🤡×{player.clownCount}</span>}
@@ -64,6 +69,13 @@ function OpponentInfo({ player, isActive, totalTricks, isHost, roomId, onError }
           <CardBack key={i} tiny />
         ))}
       </div>
+      {cheatHand && (
+        <div className="flex flex-wrap gap-1 mt-1 max-w-[200px] justify-center">
+          {cheatHand.map((card, i) => (
+            <CardComponent key={i} card={card} small />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -76,7 +88,10 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
   const [exchangeSelected, setExchangeSelected] = useState<number[]>([]);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [peekPlayerId, setPeekPlayerId] = useState<string | null>(null);
   const [showLastTrick, setShowLastTrick] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
   const [showTurnReminder, setShowTurnReminder] = useState(false);
   const [receivedCards, setReceivedCards] = useState<{ cards: import('../types').Card[]; fromName: string } | null>(null);
   const handAfterSubmitRef = useRef<import('../types').Card[] | null>(null);
@@ -262,6 +277,18 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
               {state.cheatMode ? '🃏 Debug ON' : '🃏 Debug'}
             </button>
           )}
+          {isHost && (
+            <button
+              className={`px-2 py-0.5 rounded border text-xs font-semibold transition-colors
+                ${state.spectatorPasswordSet
+                  ? 'bg-emerald-900/40 border-emerald-700/60 text-emerald-300 hover:bg-emerald-900/60'
+                  : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+              title="Set spectator password"
+              onClick={() => { setPasswordInput(''); setShowPasswordModal(true); }}
+            >
+              🔒 {state.spectatorPasswordSet ? 'Pass set' : 'Pass'}
+            </button>
+          )}
           {lastTrick && (
             <button
               className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-600 transition-colors"
@@ -288,6 +315,21 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
       {/* ── Main table layout ── */}
       <div className="flex-1 flex flex-col items-center justify-between py-3 px-4 relative min-h-0 overflow-hidden">
 
+        {/* ── Trump badge ── */}
+        {trumpSuit && (
+          <div className="absolute bottom-32 left-6 z-10 flex flex-col items-center gap-0.5 select-none pointer-events-none">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Trump</span>
+            <span className={`text-7xl leading-none font-bold drop-shadow-lg ${
+              trumpSuit === 'hearts' ? 'text-red-400' :
+              trumpSuit === 'diamonds' ? 'text-orange-400' :
+              trumpSuit === 'clubs' ? 'text-emerald-400' :
+              trumpSuit === 'spades' ? 'text-slate-200' : 'text-slate-400'
+            }`}>
+              {SUIT_SYMBOL[trumpSuit as never] ?? trumpSuit}
+            </span>
+          </div>
+        )}
+
         {/* ── TOP opponent ── */}
         {opTop && (
           <div className="flex-shrink-0">
@@ -298,6 +340,8 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
               isHost={isHost}
               roomId={state.roomId}
               onError={onError}
+              cheatHand={state.cheatMode && isHost && peekPlayerId === opTop.id ? state.allHands?.[players.findIndex(p => p.id === opTop.id)] : undefined}
+              onClickName={state.cheatMode && isHost ? () => setPeekPlayerId(id => id === opTop.id ? null : opTop.id) : undefined}
             />
           </div>
         )}
@@ -314,6 +358,8 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
                 isHost={isHost}
                 roomId={state.roomId}
                 onError={onError}
+                cheatHand={state.cheatMode && isHost && peekPlayerId === opLeft.id ? state.allHands?.[players.findIndex(p => p.id === opLeft.id)] : undefined}
+                onClickName={state.cheatMode && isHost ? () => setPeekPlayerId(id => id === opLeft.id ? null : opLeft.id) : undefined}
               />
             </div>
           )}
@@ -321,7 +367,19 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
           {/* Center: trick area + bidding */}
           <div className="flex-1 flex flex-col items-center justify-center gap-3 min-w-0">
             {/* Trick area */}
-            <div className="bg-felt-dark/80 rounded-2xl p-4 min-w-[200px] min-h-[140px] flex items-center justify-center shadow-inner border border-felt-dark/40">
+            <div className="relative bg-felt-dark/80 rounded-2xl p-4 min-w-[200px] min-h-[140px] flex items-center justify-center shadow-inner border border-felt-dark/40">
+              {trumpSuit && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <span className={`text-8xl opacity-15 select-none ${
+                    trumpSuit === 'hearts' ? 'text-red-500' :
+                    trumpSuit === 'diamonds' ? 'text-red-500' :
+                    trumpSuit === 'clubs' ? 'text-slate-900' :
+                    trumpSuit === 'spades' ? 'text-slate-900' : 'text-slate-400'
+                  }`}>
+                    {SUIT_SYMBOL[trumpSuit as never] ?? '🚫'}
+                  </span>
+                </div>
+              )}
               <TrickArea
                 currentTrick={currentTrick}
                 lastTrick={lastTrick}
@@ -384,6 +442,8 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
                 isHost={isHost}
                 roomId={state.roomId}
                 onError={onError}
+                cheatHand={state.cheatMode && isHost && peekPlayerId === opRight.id ? state.allHands?.[players.findIndex(p => p.id === opRight.id)] : undefined}
+                onClickName={state.cheatMode && isHost ? () => setPeekPlayerId(id => id === opRight.id ? null : opRight.id) : undefined}
               />
             </div>
           )}
@@ -412,11 +472,6 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
                   <span>{t('colWon')}: <span className={`font-bold ${me.tricksTaken === me.bid2 ? 'text-emerald-400' : 'text-orange-400'}`}>{me.tricksTaken}</span></span>
                 )}
               </div>
-              {trumpSuit && (
-                <span className="text-xs text-slate-500">
-                  Trump: <span className="font-medium text-yellow-400">{SUIT_SYMBOL[trumpSuit as never] ?? trumpSuit}</span>
-                </span>
-              )}
             </div>
           )}
 
@@ -505,6 +560,50 @@ export default function GameBoard({ state, zoomLink, onError }: Props) {
           >
             {t('turnReminderDismiss')}
           </button>
+        </div>
+      )}
+
+      {/* ── Spectator password modal ── */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowPasswordModal(false)}>
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="text-white font-bold text-lg mb-1">🔒 Spectator Password</div>
+            <p className="text-slate-400 text-sm mb-4">Watchers will need this password to join. Leave empty to remove the password.</p>
+            <input
+              className="field mb-4"
+              placeholder="Enter password (or leave empty to clear)"
+              value={passwordInput}
+              autoFocus
+              onChange={e => setPasswordInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  socket.emit('setSpectatorPassword', { roomId: state.roomId, password: passwordInput.trim() }, res => {
+                    if (!res.success) onError(res.error ?? 'Failed to set password');
+                    else setShowPasswordModal(false);
+                  });
+                }
+              }}
+            />
+            <div className="flex gap-3">
+              <button
+                className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold rounded-xl transition-colors text-sm"
+                onClick={() => {
+                  socket.emit('setSpectatorPassword', { roomId: state.roomId, password: passwordInput.trim() }, res => {
+                    if (!res.success) onError(res.error ?? 'Failed to set password');
+                    else setShowPasswordModal(false);
+                  });
+                }}
+              >
+                {passwordInput.trim() ? 'Set Password' : 'Clear Password'}
+              </button>
+              <button
+                className="py-2 px-4 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-xl transition-colors text-sm"
+                onClick={() => setShowPasswordModal(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

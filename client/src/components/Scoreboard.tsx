@@ -2,10 +2,10 @@ import { PlayerView, TrumpSuit, SUIT_SYMBOL } from '../types';
 import { useT } from '../i18n';
 
 const SUIT_COLOR: Record<string, string> = {
-  spades:   'text-slate-200',
-  clubs:    'text-emerald-400',
-  hearts:   'text-red-400',
-  diamonds: 'text-orange-400',
+  spades:   'text-slate-900',
+  clubs:    'text-slate-900',
+  hearts:   'text-red-500',
+  diamonds: 'text-red-500',
   notrumps: 'text-slate-400',
 };
 

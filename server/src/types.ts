@@ -104,6 +104,7 @@ export interface GameStateView {
   targetScore: number;
   hostId?: string;
   cheatMode?: boolean;
+  spectatorPasswordSet?: boolean;
   validCardIndices?: number[];
   handHistory: HandRecord[];
   // card-exchange phase
@@ -121,6 +122,7 @@ export interface RoomInfo {
   status: 'waiting' | 'playing';
   targetScore: number;
   zoomLink?: string;
+  spectatorPasswordSet?: boolean;
 }
 
 // ── Socket event maps ────────────────────────────────────────────────────────
@@ -137,7 +139,11 @@ export interface ClientToServerEvents {
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   spectate: (
-    data: { roomId: string },
+    data: { roomId: string; password?: string },
+    callback: (result: { success: boolean; error?: string }) => void
+  ) => void;
+  setSpectatorPassword: (
+    data: { roomId: string; password: string },
     callback: (result: { success: boolean; error?: string }) => void
   ) => void;
   createRoom: (
